@@ -8,6 +8,7 @@
 #include <sstream>
 
 #define K_CTRL(k) ((k) & 0x1f)
+#define VERSION "0.0.1"
 // Responsible for managing visual aspects of terminal
 namespace TerminalGUI {
 	static void wipeScreen();
@@ -18,6 +19,7 @@ namespace TerminalGUI {
 	static void flushBuf();
 	static void drawRows(std::stringstream buf);
 	static void draw();
+	static void genCoverPage(std::string &s);
 	static int getWindowSize();
 	static int getCursorPosition();
 	static void initGUI();
@@ -55,11 +57,11 @@ namespace TerminalGUI {
 	}
 
 	static void hideCursor() {
-		buf << "\x1b[?25l]"; // esacpe-argument-cursour-reset(off).
+		buf << "\x1b[?25l"; // esacpe-argument-cursour-reset(off).
 	}
 
 	static void showCursor() {
-		buf << "\x1b[?25h]"; // esacpe-argument-cursour-set(on).
+		buf << "\x1b[?25h"; // esacpe-argument-cursour-set(on).
 	}
 
 	static void reset() {
@@ -75,7 +77,8 @@ namespace TerminalGUI {
 
 	static void drawRows() {
 		for (int r = 0; r < globalConfig::sRow; r++) {
-			std::string s = r < globalConfig::sRow - 1 ? "~\r\n" : "~";
+			std::string s = "~\x1b[K"; // Add tilde and clear everything right of line with K0.
+			s += r < globalConfig::sRow - 1 ? "\r\n" : "";
 			buf << s;
 		}
 	}
@@ -83,11 +86,37 @@ namespace TerminalGUI {
 	static void draw() {	
 		// Hide cursor to prevent flicker if possible --> if not supported by system logic is ignored.
 		hideCursor();	
-		reset();
 		drawRows();
 		resetCursor();
 		showCursor();
 		flushBuf();
+	}
+
+	static std::string centerText(const std::string &text) {
+		int padding = (globalConfig::sCol - text.length()) / 2;
+		return std::string(padding > 0 ? padding : 0, ' ') + text;
+	}
+	
+
+	static void genCoverPage(std::string &s) {
+		s += centerText("   ___                       ___           ___           ___           ___           ___     \r\n");
+		s += centerText("  /\\  \\          ___        /\\__\\         |\\__\\         /\\  \\         /\\  \\         /\\  \\    \r\n");
+		s += centerText("  \\:\\  \\        /\\  \\      /::|  |        |:|  |        \\:\\  \\       /::\\  \\       /::\\  \\   \r\n");
+		s += centerText("   \\:\\  \\       \\:\\  \\    /:|:|  |        |:|  |         \\:\\  \\     /:/\\:\\  \\     /:/\\:\\  \\  \r\n");
+		s += centerText("   /::\\  \\      /::\\__\\  /:/|:|  |__      |:|__|__       /::\\  \\   /::\\~\\:\\  \\   /:/  \\:\\__\\ \r\n");
+		s += centerText("  /:/\\:\\__\\  __/:/\\/__/ /:/ |:| /\\__\\     /::::\\__\\     /:/\\:\\__\\ /:/\\:\\ \\:\\__\\ /:/__/ \\:|__|\r\n");
+		s += centerText(" /:/  \\/__/ /\\/:/  /    \\/__|:|/:/  /    /:/~~/~       /:/  \\/__/ \\:\\~\\:\\ \\/__/ \\:\\  \\ /:/  /\r\n");
+		s += centerText("/:/  /      \\::/__/         |:/:/  /    /:/  /        /:/  /       \\:\\ \\:\\__\\    \\:\\  /:/  / \r\n");
+		s += centerText("\\/__/        \\:\\__\\         |::/  /     \\/__/         \\/__/         \\:\\ \\/__/     \\:\\/:/  /  \r\n");
+		s += centerText("              \\/__/         /:/  /                                   \\:\\__\\        \\::/__/   \r\n");
+		s += centerText("                            \\/__/                                     \\/__/         ~~       \r\n");
+		s += "\n\n";
+		s += centerText("A Minimalist Command Line Text Editor\r\n");
+		std::string tmp = "Version ";
+		tmp += VERSION;
+		tmp += "\r\n";
+		s += centerText(tmp);
+		s += centerText("(Press any key to continue)\r\n");
 	}
 
 	static int getWindowSize() {
@@ -187,11 +216,11 @@ class Editor {
 	}
 
 public:
-	void procKey() {
+	void procKey(bool breakAny = false) {
 		const char c = this->readKey();
-		std::cout << c;
+		if (breakAny) return;
 		switch (c) {
-			case K_CTRL('q'): {
+			case 'q': {
 				TerminalGUI::reset();
 				exit(0);
 				break;
@@ -209,6 +238,13 @@ int main(){
 	StateMgr::enterRaw();
 	TerminalGUI::initGUI();
 	Editor p;
+
+	// Cover Page
+	std::string s;
+	TerminalGUI::genCoverPage(s);
+	std::cout << s << std::endl;
+	p.procKey(true);
+	TerminalGUI::reset();
 
 	while(1) {
 		TerminalGUI::draw();
