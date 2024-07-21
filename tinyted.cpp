@@ -5,14 +5,18 @@
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <stdio.h>
+#include <sstream>
 
 #define K_CTRL(k) ((k) & 0x1f)
 // Responsible for managing visual aspects of terminal
 namespace TerminalGUI {
 	static void wipeScreen();
 	static void resetCursor();
+	static void hideCursor();
+	static void showCursor();
 	static void reset();
-	static void drawRows();
+	static void flushBuf();
+	static void drawRows(std::stringstream buf);
 	static void draw();
 	static int getWindowSize();
 	static int getCursorPosition();
@@ -38,33 +42,52 @@ namespace globalConfig {
 	static struct termios tty;
 };
 
-
 // Responsible for managing visual aspects of terminal
 namespace TerminalGUI {
+	std::stringstream buf;
+
 	static void wipeScreen() {
-		write(STDOUT_FILENO, "\x1b[2J", 4); // Clear screen
+		buf << "\x1b[2J"; // Clear screen
 	}
 
 	static void resetCursor() {
-		write(STDOUT_FILENO, "\x1b[H", 4); // Reset cursor to 1, 1
+		buf << "\x1b[H"; // Reset cursor to 1, 1
+	}
+
+	static void hideCursor() {
+		buf << "\x1b[?25l]"; // esacpe-argument-cursour-reset(off).
+	}
+
+	static void showCursor() {
+		buf << "\x1b[?25h]"; // esacpe-argument-cursour-set(on).
 	}
 
 	static void reset() {
 		wipeScreen();
 		resetCursor();
+		flushBuf();
+	}
+
+	static void flushBuf() {
+		std::cout << buf.rdbuf(); // Send buffer to stdout
+		buf.clear();
 	}
 
 	static void drawRows() {
 		for (int r = 0; r < globalConfig::sRow; r++) {
-			std::string s = r < globalConfig::sRow -1 ? "~\r\n" : "~";
-			write(STDOUT_FILENO, s.c_str(), s.size());
+			std::string s = r < globalConfig::sRow - 1 ? "~\r\n" : "~";
+			buf << s;
 		}
 	}
 
-	static void draw() {
+	static void draw() {	
+		// Hide cursor to prevent flicker if possible --> if not supported by system logic is ignored.
+		hideCursor();	
 		reset();
 		drawRows();
 		resetCursor();
+		showCursor();
+		flushBuf();
 	}
 
 	static int getWindowSize() {
@@ -76,6 +99,7 @@ namespace TerminalGUI {
 			if (write(STDOUT_FILENO, "\x1b[999C\x1b[999B", 12) != 12) return -1;
 			return getCursorPosition();
 		}
+
 		globalConfig::sRow = w.ws_row;
 		globalConfig::sCol = w.ws_col;
 		return 0;
