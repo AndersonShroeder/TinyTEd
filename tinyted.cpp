@@ -24,6 +24,17 @@ enum keys {
 	PAGE_DOWN,
 };
 
+
+class Editor {
+	int r;
+
+	const int readKey();
+	void moveCursor(int c);
+
+public:
+	void procKey(bool breakAny = false);	
+};
+
 // Responsible for managing visual aspects of terminal
 namespace TerminalGUI {
 	static void wipeScreen();
@@ -32,6 +43,7 @@ namespace TerminalGUI {
 	static void showCursor();
 	static void reset();
 	static void flushBuf();
+	static void splashScreen(Editor &e);
 	static void drawRows(std::stringstream buf);
 	static void draw();
 	static void genCoverPage(std::string &s);
@@ -57,6 +69,115 @@ namespace globalConfig {
 	static int sRow, sCol, cx = 0, cy = 0;
 	static struct termios tty;
 };
+
+
+const int Editor::readKey() {
+	char c;
+	while (r = read(STDIN_FILENO, &c, sizeof(c)) != 1) {
+		if (r < 0 && errno != EAGAIN) {
+			ErrorMgr::err("read");
+		}
+	}
+
+	if (c == '\x1b') {
+		std::array<char, 3> buf;
+		if (read(STDIN_FILENO, &buf[0], 1) != 1) return c;
+		if (read(STDIN_FILENO, &buf[1], 1) != 1) return c;
+		
+		if (buf[0] == '[') {
+			if (buf[1] >= '0' && buf[1] <= '9') {
+				if (read(STDIN_FILENO, &buf[2], 1) != 1) return c;
+				if (buf[2] == '~') {
+					switch (buf[1]) {
+						case '1': return HOME; // Multiple different ways home/end can be sent --> handle all
+						case '3': return DEL;
+						case '4': return END;
+						case '5': return PAGE_UP;
+						case '6': return PAGE_DOWN;
+						case '7': return HOME;
+						case '8': return END;
+					}
+				}
+
+			} else {
+				switch (buf[1]) {
+					case 'A': return ARROW_UP;
+					case 'B': return ARROW_DOWN;
+					case 'C': return ARROW_RIGHT;
+					case 'D': return ARROW_LEFT;
+					case 'H': return HOME;
+					case 'F': return END;
+				}
+			}
+		}
+		else if (buf[0] == 'O') {
+			switch(buf[1]) {
+				case 'H': return HOME;
+				case 'F': return END;
+			}
+		}
+		return '\x1b';
+	}
+	return c;
+}
+
+void Editor::moveCursor(int c) {
+	switch(c) {
+		case ARROW_UP:
+			globalConfig::cy > 0 ? globalConfig::cy-- : 0;
+			break;
+		case ARROW_LEFT:
+			globalConfig::cx > 0 ? globalConfig::cx-- : 0;
+			break;
+		case ARROW_DOWN:
+			globalConfig::cy < globalConfig::sRow ? globalConfig::cy++ : 0;
+			break;
+		case ARROW_RIGHT:
+			globalConfig::cx < globalConfig::sCol ? globalConfig::cx++ : 0;
+
+			break;
+	}
+}
+
+void Editor::procKey(bool breakAny) {
+	int c = this->readKey();
+	if (breakAny) return;
+	switch (c) {
+		// Quit keystroke
+		case K_CTRL('q'): {
+			TerminalGUI::reset();
+			exit(0);
+			break;
+		}
+
+		// top/bottom of file
+		case PAGE_UP:
+		case PAGE_DOWN:
+			globalConfig::cy = c == PAGE_UP ? 0 : globalConfig::sRow - 1;
+			break;
+
+		// start/end of line
+		case HOME:
+		case END:
+			globalConfig::cx = c == HOME ? 0 : globalConfig::sCol - 1;
+			break;
+
+		// delete
+		case DEL:
+			break;
+
+		// Curosr moving
+		case ARROW_UP:
+		case ARROW_LEFT:
+		case ARROW_DOWN:
+		case ARROW_RIGHT:
+			moveCursor(c);
+
+		default: {
+			break;
+		}
+	}
+}	
 
 // Responsible for managing visual aspects of terminal
 namespace TerminalGUI {
@@ -114,6 +235,14 @@ namespace TerminalGUI {
 		flushBuf();
 	}
 
+	static void splashScreen(Editor &e) {
+		// Generate splash screen
+		std::string s;
+		genCoverPage(s);
+		std::cout << s << std::endl;
+		e.procKey();
+	}
+
 	static std::string centerText(const std::string &text) {
 		int padding = (globalConfig::sCol - text.length()) / 2;
 		return std::string(padding > 0 ? padding : 0, ' ') + text;
@@ -121,24 +250,30 @@ namespace TerminalGUI {
 	
 
 	static void genCoverPage(std::string &s) {
-		s += centerText("   ___                       ___           ___           ___           ___           ___     \r\n");
-		s += centerText("  /\\  \\          ___        /\\__\\         |\\__\\         /\\  \\         /\\  \\         /\\  \\    \r\n");
-		s += centerText("  \\:\\  \\        /\\  \\      /::|  |        |:|  |        \\:\\  \\       /::\\  \\       /::\\  \\   \r\n");
-		s += centerText("   \\:\\  \\       \\:\\  \\    /:|:|  |        |:|  |         \\:\\  \\     /:/\\:\\  \\     /:/\\:\\  \\  \r\n");
-		s += centerText("   /::\\  \\      /::\\__\\  /:/|:|  |__      |:|__|__       /::\\  \\   /::\\~\\:\\  \\   /:/  \\:\\__\\ \r\n");
-		s += centerText("  /:/\\:\\__\\  __/:/\\/__/ /:/ |:| /\\__\\     /::::\\__\\     /:/\\:\\__\\ /:/\\:\\ \\:\\__\\ /:/__/ \\:|__|\r\n");
-		s += centerText(" /:/  \\/__/ /\\/:/  /    \\/__|:|/:/  /    /:/~~/~       /:/  \\/__/ \\:\\~\\:\\ \\/__/ \\:\\  \\ /:/  /\r\n");
-		s += centerText("/:/  /      \\::/__/         |:/:/  /    /:/  /        /:/  /       \\:\\ \\:\\__\\    \\:\\  /:/  / \r\n");
-		s += centerText("\\/__/        \\:\\__\\         |::/  /     \\/__/         \\/__/         \\:\\ \\/__/     \\:\\/:/  /  \r\n");
-		s += centerText("              \\/__/         /:/  /                                   \\:\\__\\        \\::/__/   \r\n");
-		s += centerText("                            \\/__/                                     \\/__/         ~~       \r\n");
-		s += "\n\n";
-		s += centerText("A Minimalist Command Line Text Editor\r\n");
+		std::vector<std::string> v;
+		v.push_back(centerText("   ___                       ___           ___           ___           ___           ___     \r\n"));
+		v.push_back(centerText("  /\\  \\          ___        /\\__\\         |\\__\\         /\\  \\         /\\  \\         /\\  \\    \r\n"));
+		v.push_back(centerText("  \\:\\  \\        /\\  \\      /::|  |        |:|  |        \\:\\  \\       /::\\  \\       /::\\  \\   \r\n"));
+		v.push_back(centerText("   \\:\\  \\       \\:\\  \\    /:|:|  |        |:|  |         \\:\\  \\     /:/\\:\\  \\     /:/\\:\\  \\  \r\n"));
+		v.push_back(centerText("   /::\\  \\      /::\\__\\  /:/|:|  |__      |:|__|__       /::\\  \\   /::\\~\\:\\  \\   /:/  \\:\\__\\ \r\n"));
+		v.push_back(centerText("  /:/\\:\\__\\  __/:/\\/__/ /:/ |:| /\\__\\     /::::\\__\\     /:/\\:\\__\\ /:/\\:\\ \\:\\__\\ /:/__/ \\:|__|\r\n"));
+		v.push_back(centerText(" /:/  \\/__/ /\\/:/  /    \\/__|:|/:/  /    /:/~~/~       /:/  \\/__/ \\:\\~\\:\\ \\/__/ \\:\\  \\ /:/  /\r\n"));
+		v.push_back(centerText("/:/  /      \\::/__/         |:/:/  /    /:/  /        /:/  /       \\:\\ \\:\\__\\    \\:\\  /:/  / \r\n"));
+		v.push_back(centerText("\\/__/        \\:\\__\\         |::/  /     \\/__/         \\/__/         \\:\\ \\/__/     \\:\\/:/  /  \r\n"));
+		v.push_back(centerText("              \\/__/         /:/  /                                   \\:\\__\\        \\::/__/   \r\n"));
+		v.push_back(centerText("                            \\/__/                                     \\/__/         ~~       \r\n"));
+		v.push_back("\n\n");
+		v.push_back(centerText("A Minimalist Command Line Text Editor\r\n"));
 		std::string tmp = "Version ";
 		tmp += VERSION;
 		tmp += "\r\n";
-		s += centerText(tmp);
-		s += centerText("(Press any key to continue)\r\n");
+		v.push_back(centerText(tmp));
+		v.push_back(centerText("(Press any key to continue)\r\n"));
+
+		int verticalPadding = (globalConfig::sRow - v.size()) / 2;
+		for (int i = 0; i < verticalPadding + v.size(); i++) {
+			s += i < verticalPadding ? "\n" : v.at(i - verticalPadding);
+		}
 	}
 
 	static int getWindowSize() {
@@ -222,136 +357,17 @@ namespace StateMgr {
 };
 
 
-class Editor {
-	int r;
-
-	const int readKey() {
-		char c;
-		while (r = read(STDIN_FILENO, &c, sizeof(c)) != 1) {
-			if (r < 0 && errno != EAGAIN) {
-				ErrorMgr::err("read");
-			}
-		}
-
-		if (c == '\x1b') {
-			std::array<char, 3> buf;
-			if (read(STDIN_FILENO, &buf[0], 1) != 1) return c;
-			if (read(STDIN_FILENO, &buf[1], 1) != 1) return c;
-			
-			if (buf[0] == '[') {
-				if (buf[1] >= '0' && buf[1] <= '9') {
-					if (read(STDIN_FILENO, &buf[2], 1) != 1) return c;
-					if (buf[2] == '~') {
-						switch (buf[1]) {
-							case '1': return HOME; // Multiple different ways home/end can be sent --> handle all
-							case '3': return DEL;
-							case '4': return END;
-							case '5': return PAGE_UP;
-							case '6': return PAGE_DOWN;
-							case '7': return HOME;
-							case '8': return END;
-						}
-					}
-
-				} else {
-					switch (buf[1]) {
-						case 'A': return ARROW_UP;
-						case 'B': return ARROW_DOWN;
-						case 'C': return ARROW_RIGHT;
-						case 'D': return ARROW_LEFT;
-						case 'H': return HOME;
-						case 'F': return END;
-					}
-				}
-			}
-			else if (buf[0] == 'O') {
-				switch(buf[1]) {
-					case 'H': return HOME;
-					case 'F': return END;
-				}
-			}
-			return '\x1b';
-		}
-		return c;
-	}
-
-	void moveCursor(int c) {
-		switch(c) {
-			case ARROW_UP:
-				globalConfig::cy > 0 ? globalConfig::cy-- : 0;
-				break;
-			case ARROW_LEFT:
-				globalConfig::cx > 0 ? globalConfig::cx-- : 0;
-				break;
-			case ARROW_DOWN:
-				globalConfig::cy < globalConfig::sRow ? globalConfig::cy++ : 0;
-				break;
-			case ARROW_RIGHT:
-				globalConfig::cx < globalConfig::sCol ? globalConfig::cx++ : 0;
-
-				break;
-		}
-	}
-
-public:
-	void procKey(bool breakAny = false) {
-		int c = this->readKey();
-		if (breakAny) return;
-		switch (c) {
-			// Quit keystroke
-			case K_CTRL('q'): {
-				TerminalGUI::reset();
-				exit(0);
-				break;
-			}
-
-			// top/bottom of file
-			case PAGE_UP:
-			case PAGE_DOWN:
-				globalConfig::cy = c == PAGE_UP ? 0 : globalConfig::sRow - 1;
-				break;
-
-			// start/end of line
-			case HOME:
-			case END:
-				globalConfig::cx = c == HOME ? 0 : globalConfig::sCol - 1;
-				break;
-
-			// delete
-			case DEL:
-				break;
-
-			// Curosr moving
-			case ARROW_UP:
-			case ARROW_LEFT:
-			case ARROW_DOWN:
-			case ARROW_RIGHT:
-				moveCursor(c);
-
-			default: {
-				break;
-			}
-		}
-	}
-
-		
-};
-
 int main(){
 	StateMgr::enterRaw();
 	TerminalGUI::initGUI();
-	Editor p;
+	Editor e;
 
 	// Cover Page
-	std::string s;
-	TerminalGUI::genCoverPage(s);
-	std::cout << s << std::endl;
-	p.procKey(true);
-	TerminalGUI::reset();
+	TerminalGUI::splashScreen(e);
 
 	while(1) {
 		TerminalGUI::draw();
-		p.procKey();
+		e.procKey();
 	}
 	return 0;
 }
