@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <sstream>
 #include <array>
+#include <algorithm>
 
 #define K_CTRL(k) ((k) & 0x1f)
 #define VERSION "0.0.1"
@@ -16,6 +17,9 @@ enum keys {
 	ARROW_RIGHT,
 	ARROW_UP,
 	ARROW_DOWN,
+	DEL,
+	HOME,
+	END,
 	PAGE_UP,
 	PAGE_DOWN,
 };
@@ -235,14 +239,37 @@ class Editor {
 			if (read(STDIN_FILENO, &buf[1], 1) != 1) return c;
 			
 			if (buf[0] == '[') {
-				switch (buf[1]) {
-					case 'A': return ARROW_UP;
-					case 'B': return ARROW_DOWN;
-					case 'C': return ARROW_RIGHT;
-					case 'D': return ARROW_LEFT;
+				if (buf[1] >= '0' && buf[1] <= '9') {
+					if (read(STDIN_FILENO, &buf[2], 1) != 1) return c;
+					if (buf[2] == '~') {
+						switch (buf[1]) {
+							case '1': return HOME; // Multiple different ways home/end can be sent --> handle all
+							case '3': return DEL;
+							case '4': return END;
+							case '5': return PAGE_UP;
+							case '6': return PAGE_DOWN;
+							case '7': return HOME;
+							case '8': return END;
+						}
+					}
+
+				} else {
+					switch (buf[1]) {
+						case 'A': return ARROW_UP;
+						case 'B': return ARROW_DOWN;
+						case 'C': return ARROW_RIGHT;
+						case 'D': return ARROW_LEFT;
+						case 'H': return HOME;
+						case 'F': return END;
+					}
 				}
 			}
-
+			else if (buf[0] == 'O') {
+				switch(buf[1]) {
+					case 'H': return HOME;
+					case 'F': return END;
+				}
+			}
 			return '\x1b';
 		}
 		return c;
@@ -277,6 +304,22 @@ public:
 				exit(0);
 				break;
 			}
+
+			// top/bottom of file
+			case PAGE_UP:
+			case PAGE_DOWN:
+				globalConfig::cy = c == PAGE_UP ? 0 : globalConfig::sRow - 1;
+				break;
+
+			// start/end of line
+			case HOME:
+			case END:
+				globalConfig::cx = c == HOME ? 0 : globalConfig::sCol - 1;
+				break;
+
+			// delete
+			case DEL:
+				break;
 
 			// Curosr moving
 			case ARROW_UP:
