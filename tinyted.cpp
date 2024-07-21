@@ -44,7 +44,7 @@ namespace TerminalGUI {
 	static void reset();
 	static void flushBuf();
 	static void splashScreen(Editor &e);
-	static void drawRows(std::stringstream buf);
+	static void drawRows();
 	static void draw();
 	static void genCoverPage(std::string &s);
 	static int getWindowSize();
@@ -251,6 +251,7 @@ namespace TerminalGUI {
 
 	static void genCoverPage(std::string &s) {
 		std::vector<std::string> v;
+		v.push_back("\033[1;36m");
 		v.push_back(centerText("   ___                       ___           ___           ___           ___           ___     \r\n"));
 		v.push_back(centerText("  /\\  \\          ___        /\\__\\         |\\__\\         /\\  \\         /\\  \\         /\\  \\    \r\n"));
 		v.push_back(centerText("  \\:\\  \\        /\\  \\      /::|  |        |:|  |        \\:\\  \\       /::\\  \\       /::\\  \\   \r\n"));
@@ -263,12 +264,14 @@ namespace TerminalGUI {
 		v.push_back(centerText("              \\/__/         /:/  /                                   \\:\\__\\        \\::/__/   \r\n"));
 		v.push_back(centerText("                            \\/__/                                     \\/__/         ~~       \r\n"));
 		v.push_back("\n\n");
+		v.push_back("\e[1;35m");
 		v.push_back(centerText("A Minimalist Command Line Text Editor\r\n"));
 		std::string tmp = "Version ";
 		tmp += VERSION;
 		tmp += "\r\n";
 		v.push_back(centerText(tmp));
 		v.push_back(centerText("(Press any key to continue)\r\n"));
+		v.push_back("\e[0m");
 
 		int verticalPadding = (globalConfig::sRow - v.size()) / 2;
 		for (int i = 0; i < verticalPadding + v.size(); i++) {
