@@ -6,9 +6,20 @@
 #include <sys/ioctl.h>
 #include <stdio.h>
 #include <sstream>
+#include <array>
 
 #define K_CTRL(k) ((k) & 0x1f)
 #define VERSION "0.0.1"
+
+enum keys {
+	ARROW_LEFT = 1000,
+	ARROW_RIGHT,
+	ARROW_UP,
+	ARROW_DOWN,
+	PAGE_UP,
+	PAGE_DOWN,
+};
+
 // Responsible for managing visual aspects of terminal
 namespace TerminalGUI {
 	static void wipeScreen();
@@ -39,8 +50,7 @@ namespace StateMgr {
 };
 
 namespace globalConfig {
-	static int sRow;
-	static int sCol;
+	static int sRow, sCol, cx = 0, cy = 0;
 	static struct termios tty;
 };
 
@@ -54,6 +64,12 @@ namespace TerminalGUI {
 
 	static void resetCursor() {
 		buf << "\x1b[H"; // Reset cursor to 1, 1
+	}
+
+	static void updateCursor() {
+		std::stringstream ss;
+		ss << "\x1b[" << globalConfig::cy + 1 << ";" << globalConfig::cx + 1 << "H"; //must convert cursor pos from 0-indexed;
+		buf << ss.str();
 	}
 
 	static void hideCursor() {
@@ -71,7 +87,8 @@ namespace TerminalGUI {
 	}
 
 	static void flushBuf() {
-		std::cout << buf.rdbuf(); // Send buffer to stdout
+		std::string s = buf.rdbuf()->str();
+		write(STDOUT_FILENO, s.c_str(), s.size()); // Send buffer to stdout
 		buf.clear();
 	}
 
@@ -85,9 +102,10 @@ namespace TerminalGUI {
 
 	static void draw() {	
 		// Hide cursor to prevent flicker if possible --> if not supported by system logic is ignored.
-		hideCursor();	
-		drawRows();
+		hideCursor();
 		resetCursor();
+		drawRows();
+		updateCursor();
 		showCursor();
 		flushBuf();
 	}
@@ -201,10 +219,9 @@ namespace StateMgr {
 
 
 class Editor {
-	char c;
 	int r;
 
-	const char readKey() {
+	const int readKey() {
 		char c;
 		while (r = read(STDIN_FILENO, &c, sizeof(c)) != 1) {
 			if (r < 0 && errno != EAGAIN) {
@@ -212,19 +229,62 @@ class Editor {
 			}
 		}
 
+		if (c == '\x1b') {
+			std::array<char, 3> buf;
+			if (read(STDIN_FILENO, &buf[0], 1) != 1) return c;
+			if (read(STDIN_FILENO, &buf[1], 1) != 1) return c;
+			
+			if (buf[0] == '[') {
+				switch (buf[1]) {
+					case 'A': return ARROW_UP;
+					case 'B': return ARROW_DOWN;
+					case 'C': return ARROW_RIGHT;
+					case 'D': return ARROW_LEFT;
+				}
+			}
+
+			return '\x1b';
+		}
 		return c;
+	}
+
+	void moveCursor(int c) {
+		switch(c) {
+			case ARROW_UP:
+				globalConfig::cy > 0 ? globalConfig::cy-- : 0;
+				break;
+			case ARROW_LEFT:
+				globalConfig::cx > 0 ? globalConfig::cx-- : 0;
+				break;
+			case ARROW_DOWN:
+				globalConfig::cy < globalConfig::sRow ? globalConfig::cy++ : 0;
+				break;
+			case ARROW_RIGHT:
+				globalConfig::cx < globalConfig::sCol ? globalConfig::cx++ : 0;
+
+				break;
+		}
 	}
 
 public:
 	void procKey(bool breakAny = false) {
-		const char c = this->readKey();
+		int c = this->readKey();
 		if (breakAny) return;
 		switch (c) {
-			case 'q': {
+			// Quit keystroke
+			case K_CTRL('q'): {
 				TerminalGUI::reset();
 				exit(0);
 				break;
 			}
+
+			// Curosr moving
+			case ARROW_UP:
+			case ARROW_LEFT:
+			case ARROW_DOWN:
+			case ARROW_RIGHT:
+				moveCursor(c);
+
 			default: {
 				break;
 			}
