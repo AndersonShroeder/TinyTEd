@@ -8,6 +8,9 @@
 #include <sstream>
 #include <array>
 #include <algorithm>
+#include <vector>
+#include <list>
+#include <memory>
 
 #define K_CTRL(k) ((k) & 0x1f)
 #define VERSION "0.0.1"
@@ -24,11 +27,14 @@ enum keys {
 	PAGE_DOWN,
 };
 
+struct rowData {
+	size_t size = 0;
+	std::string s;
+};
 
 class Editor {
 	int r;
-
-	const int readKey();
+	int readKey();
 	void moveCursor(int c);
 
 public:
@@ -68,12 +74,13 @@ namespace StateMgr {
 namespace globalConfig {
 	static int sRow, sCol, cx = 0, cy = 0;
 	static struct termios tty;
+	static std::list<std::unique_ptr<rowData>> fileData;
 };
 
 
-const int Editor::readKey() {
+int Editor::readKey() {
 	char c;
-	while (r = read(STDIN_FILENO, &c, sizeof(c)) != 1) {
+	while ((r = read(STDIN_FILENO, &c, sizeof(c))) != 1) {
 		if (r < 0 && errno != EAGAIN) {
 			ErrorMgr::err("read");
 		}
@@ -219,9 +226,14 @@ namespace TerminalGUI {
 
 	static void drawRows() {
 		for (int r = 0; r < globalConfig::sRow; r++) {
-			std::string s = "~\x1b[K"; // Add tilde and clear everything right of line with K0.
-			s += r < globalConfig::sRow - 1 ? "\r\n" : "";
-			buf << s;
+			if (r > globalConfig::fileData.size()) {
+				std::string s = "~\x1b[K"; // Add tilde and clear everything right of line with K0.
+				s += r < globalConfig::sRow - 1 ? "\r\n" : "";
+				buf << s;
+			}
+			else {
+				buff << globalConfig::fileData;
+			}
 		}
 	}
 
@@ -237,6 +249,7 @@ namespace TerminalGUI {
 
 	static void splashScreen(Editor &e) {
 		// Generate splash screen
+		reset();
 		std::string s;
 		genCoverPage(s);
 		std::cout << s << std::endl;
@@ -273,8 +286,8 @@ namespace TerminalGUI {
 		v.push_back(centerText("(Press any key to continue)\r\n"));
 		v.push_back("\e[0m");
 
-		int verticalPadding = (globalConfig::sRow - v.size()) / 2;
-		for (int i = 0; i < verticalPadding + v.size(); i++) {
+		size_t verticalPadding = (globalConfig::sRow - v.size()) / 2;
+		for (size_t i = 0; i < verticalPadding + v.size(); i++) {
 			s += i < verticalPadding ? "\n" : v.at(i - verticalPadding);
 		}
 	}
@@ -282,7 +295,6 @@ namespace TerminalGUI {
 	static int getWindowSize() {
 		struct winsize w;
 
-		char c;
 		// If ioctl doesnt work use escape sequences to find rows/cols
 		if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == -1 || w.ws_col == 0) {
 			if (write(STDOUT_FILENO, "\x1b[999C\x1b[999B", 12) != 12) return -1;
@@ -307,7 +319,7 @@ namespace TerminalGUI {
 		buf[i] = '\0';
 
 		if (buf[0] != '\x1b' || buf[1] != '[') return -1;
-		if (sscanf(&buf[2], "%d;%d", globalConfig::sRow, globalConfig::sCol) != 2) return -1;
+		if (sscanf(&buf[2], "%d;%d", &globalConfig::sRow, &globalConfig::sCol) != 2) return -1;
 
 		return 0;
 	}
