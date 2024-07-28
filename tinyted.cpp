@@ -11,6 +11,7 @@
 #include <vector>
 #include <list>
 #include <memory>
+#include <fstream>
 
 #define K_CTRL(k) ((k) & 0x1f)
 #define VERSION "0.0.1"
@@ -28,7 +29,6 @@ enum keys {
 };
 
 struct rowData {
-	size_t size = 0;
 	std::string s;
 };
 
@@ -40,6 +40,10 @@ class Editor {
 public:
 	void procKey(bool breakAny = false);	
 };
+
+namespace FileIO {
+	static void openFile(char *path);
+}
 
 // Responsible for managing visual aspects of terminal
 namespace TerminalGUI {
@@ -72,7 +76,7 @@ namespace StateMgr {
 };
 
 namespace globalConfig {
-	static int sRow, sCol, cx = 0, cy = 0;
+	static size_t sRow, sCol, cx = 0, cy = 0;
 	static struct termios tty;
 	static std::list<std::unique_ptr<rowData>> fileData;
 };
@@ -186,6 +190,18 @@ void Editor::procKey(bool breakAny) {
 	}
 }	
 
+namespace FileIO{
+	static void openFile(char *path) {
+		std::ifstream file(path);
+		if (!file) ErrorMgr::err("failed to open file");
+
+		std::string s;
+		while (std::getline(file, s)) {
+			globalConfig::fileData.emplace_back(std::make_unique<rowData>(s));
+		}
+	}
+}
+
 // Responsible for managing visual aspects of terminal
 namespace TerminalGUI {
 	std::stringstream buf;
@@ -225,14 +241,16 @@ namespace TerminalGUI {
 	}
 
 	static void drawRows() {
-		for (int r = 0; r < globalConfig::sRow; r++) {
-			if (r > globalConfig::fileData.size()) {
+		auto it = globalConfig::fileData.begin();
+		
+		for (size_t r = 0; r < globalConfig::sRow; r++) {
+			if (r >= globalConfig::fileData.size()) {
 				std::string s = "~\x1b[K"; // Add tilde and clear everything right of line with K0.
 				s += r < globalConfig::sRow - 1 ? "\r\n" : "";
 				buf << s;
-			}
-			else {
-				buff << globalConfig::fileData;
+			} else {
+				buf << (*it)->s << "\r\n";
+				it++;
 			}
 		}
 	}
@@ -319,7 +337,7 @@ namespace TerminalGUI {
 		buf[i] = '\0';
 
 		if (buf[0] != '\x1b' || buf[1] != '[') return -1;
-		if (sscanf(&buf[2], "%d;%d", &globalConfig::sRow, &globalConfig::sCol) != 2) return -1;
+		if (sscanf(&buf[2], "%ld;%ld", &globalConfig::sRow, &globalConfig::sCol) != 2) return -1;
 
 		return 0;
 	}
@@ -379,6 +397,9 @@ int main(){
 
 	// Cover Page
 	TerminalGUI::splashScreen(e);
+	std::unique_ptr<rowData> init = std::make_unique<rowData>("test");
+	char *test_path = "tinyted.cpp";
+	FileIO::openFile(test_path);
 
 	while(1) {
 		TerminalGUI::draw();
