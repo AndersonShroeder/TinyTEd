@@ -51,6 +51,7 @@ namespace TerminalGUI {
 	static void resetCursor();
 	static void hideCursor();
 	static void showCursor();
+	static void scroll();
 	static void reset();
 	static void flushBuf();
 	static void splashScreen(Editor &e);
@@ -76,9 +77,9 @@ namespace StateMgr {
 };
 
 namespace globalConfig {
-	static size_t sRow, sCol, cx = 0, cy = 0;
+	static size_t sRow, sCol, rOffset = 0, cOffset = 0, cx = 0, cy = 0;
 	static struct termios tty;
-	static std::list<std::unique_ptr<rowData>> fileData;
+	static std::vector<std::unique_ptr<rowData>> fileData;
 };
 
 
@@ -141,11 +142,10 @@ void Editor::moveCursor(int c) {
 			globalConfig::cx > 0 ? globalConfig::cx-- : 0;
 			break;
 		case ARROW_DOWN:
-			globalConfig::cy < globalConfig::sRow ? globalConfig::cy++ : 0;
+			globalConfig::cy < globalConfig::fileData.size() ? globalConfig::cy++ : 0;
 			break;
 		case ARROW_RIGHT:
-			globalConfig::cx < globalConfig::sCol ? globalConfig::cx++ : 0;
-
+			globalConfig::cx++;
 			break;
 	}
 }
@@ -199,6 +199,8 @@ namespace FileIO{
 		while (std::getline(file, s)) {
 			globalConfig::fileData.emplace_back(std::make_unique<rowData>(s));
 		}
+
+		file.close();
 	}
 }
 
@@ -216,7 +218,7 @@ namespace TerminalGUI {
 
 	static void updateCursor() {
 		std::stringstream ss;
-		ss << "\x1b[" << globalConfig::cy + 1 << ";" << globalConfig::cx + 1 << "H"; //must convert cursor pos from 0-indexed;
+		ss << "\x1b[" << (globalConfig::cy - globalConfig::rOffset) + 1 << ";" << globalConfig::cx + 1 << "H"; //must convert cursor pos from 0-indexed;
 		buf << ss.str();
 	}
 
@@ -228,6 +230,16 @@ namespace TerminalGUI {
 		buf << "\x1b[?25h"; // esacpe-argument-cursour-set(on).
 	}
 
+	static void scroll() {
+		// Vertical Scroll
+		if (globalConfig::cy < globalConfig::rOffset) globalConfig::rOffset = globalConfig::cy;
+		if (globalConfig::cy >= globalConfig::rOffset + globalConfig::sRow) globalConfig::rOffset = globalConfig::cy - globalConfig::sRow + 1;
+
+		// Horizontal Scroll
+		if (globalConfig::cx < globalConfig::cOffset) globalConfig::cOffset = globalConfig::cx;
+		if (globalConfig::cx >= globalConfig::cOffset + globalConfig::sCol) globalConfig::cOffset = globalConfig::cx - globalConfig::sCol + 1;
+	}
+
 	static void reset() {
 		wipeScreen();
 		resetCursor();
@@ -237,26 +249,31 @@ namespace TerminalGUI {
 	static void flushBuf() {
 		std::string s = buf.rdbuf()->str();
 		write(STDOUT_FILENO, s.c_str(), s.size()); // Send buffer to stdout
-		buf.clear();
+		buf.str("");
 	}
 
 	static void drawRows() {
-		auto it = globalConfig::fileData.begin();
-		
 		for (size_t r = 0; r < globalConfig::sRow; r++) {
 			if (r >= globalConfig::fileData.size()) {
 				std::string s = "~\x1b[K"; // Add tilde and clear everything right of line with K0.
 				s += r < globalConfig::sRow - 1 ? "\r\n" : "";
 				buf << s;
 			} else {
-				buf << (*it)->s << "\r\n";
-				it++;
+				std::string data = globalConfig::fileData.at(r+globalConfig::rOffset)->s;
+
+				int len = data.size() - globalConfig::cOffset;
+      			if (len < 0) len = 0;
+      			if (len > globalConfig::sCol) len = globalConfig::sCol;
+
+				buf << "\x1b[K";
+				buf << data.substr(globalConfig::cOffset, len) << "\r\n";
 			}
 		}
 	}
 
 	static void draw() {	
 		// Hide cursor to prevent flicker if possible --> if not supported by system logic is ignored.
+		scroll();
 		hideCursor();
 		resetCursor();
 		drawRows();
@@ -397,8 +414,7 @@ int main(){
 
 	// Cover Page
 	TerminalGUI::splashScreen(e);
-	std::unique_ptr<rowData> init = std::make_unique<rowData>("test");
-	char *test_path = "tinyted.cpp";
+	char *test_path = "test.txt";
 	FileIO::openFile(test_path);
 
 	while(1) {
