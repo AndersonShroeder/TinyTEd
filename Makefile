@@ -2,7 +2,7 @@ CMP = g++
 target = tinyted
 src = tinyted.cpp
 OBJ = $(src:.cpp=.o)
-CMPF = -Wall -Wextra -std=c++20
+CMPF = -pg -Wall -Wextra -std=c++20
 all: $(target)
 
 $(target): $(OBJ)
