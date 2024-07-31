@@ -1,15 +1,25 @@
 CMP = g++
-target = tinyted
-src = tinyted.cpp
-OBJ = $(src:.cpp=.o)
-CMPF = -Wall -Wextra -std=c++20
-all: $(target)
+TARGET = tinyted
+SRC_DIR = ./src
+OBJ_DIR = ./build
+INCLUDE_DIR = ./include
 
-$(target): $(OBJ)
+# Collect all source files
+SRC = $(wildcard $(SRC_DIR)/*.cpp)
+# Convert source files to object files
+OBJ = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRC))
+
+CMPF = -Wall -Wextra -std=c++20 -I$(INCLUDE_DIR)
+
+all: $(TARGET)
+
+$(TARGET): $(OBJ)
 	$(CMP) $(CMPF) -o $@ $^
 
-%.o: %.cpp
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+	@mkdir -p $(OBJ_DIR)
 	$(CMP) $(CMPF) -c $< -o $@
 
 clean:
-	rm -f $(OBJ) $(target)
+	rm -f $(OBJ) $(TARGET)
+	rm -rf $(OBJ_DIR)
