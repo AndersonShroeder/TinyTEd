@@ -42,11 +42,6 @@ TinyTED is still under development. Currently, you can open files, edit text, an
 
 If you want to contribute or just play around with the code, feel free to fork the repository and submit pull requests.
 
-
-## License
-
-This project is licensed under the MIT License. See the `LICENSE` file for details.
-
 ## Contact
 
 For any inquiries or suggestions, please open an issue.
