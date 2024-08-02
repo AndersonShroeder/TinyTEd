@@ -29,6 +29,7 @@ struct Row {
  * @param cx Cursor's x position on the screen.
  * @param cy Cursor's y position on the screen.
  * @param rx Rendered x position in the file row.
+ * @param modified Whether or not the file opened has been modified
  * @param tty Terminal I/O settings.
  * @param fileData Data of the file currently open, stored as rows.
  * @param filename Name of the currently open file.
@@ -43,9 +44,14 @@ struct Config {
     size_t cx;
     size_t cy;
     size_t rx;
+    int modified = 0;
     struct termios tty;
     std::vector<std::shared_ptr<Row>> fileData;
     std::string filename;
     std::string statusMsg;
     time_t statusTime = 0;
 };
+
+namespace ConfigTools {
+    std::stringstream accFileData(Config &cfg);
+}

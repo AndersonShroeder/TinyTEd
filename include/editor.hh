@@ -46,4 +46,8 @@ public:
      * @param breakAny If true, will break out of the function immediately.
      */
     int processKey(bool breakAny = false);
+
+    void insertCharAtRow(char c);
+
+    void insertChar(char c);
 };

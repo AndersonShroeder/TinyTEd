@@ -1,8 +1,9 @@
 #include <termgui.hh>
-#include <ctime>
 #include <version.hh>
 #include <sys/ioctl.h>
 #include <errmgr.hh>
+#include <alert.hh>
+#include <ctime>
 
 TerminalGUI::TerminalGUI(Config &cfg) : config(cfg) {};
 
@@ -84,7 +85,9 @@ void TerminalGUI::drawStatusBar() {
     std::stringstream ss;
 
     std::string leftStatus = config.filename + " - " + std::to_string(config.fileData.size()) + " lines";
+    // {row}, {col} {modified?}
     std::string rightStatus = std::to_string(config.cy + 1) + "," + std::to_string(config.cx + 1);
+    rightStatus += config.modified > 0 ? " M" : "";
     ss << leftStatus;
 
     while (ss.str().size() < config.sCol - rightStatus.size()) {
@@ -196,11 +199,6 @@ int TerminalGUI::getCursorPosition(Config& config) {
 
 void TerminalGUI::initGUI() {
     if (getWindowSize(config) == -1) ErrorMgr::err("window size error");
-}
-
-void TerminalGUI::setStatusMsg(const std::string &msg) {
-    config.statusMsg = msg;
-    config.statusTime = std::time(nullptr);
 }
 
 void TerminalGUI::reset() {

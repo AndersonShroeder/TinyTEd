@@ -1,7 +1,7 @@
 CMP = g++
-TARGET = tinyted
+TARGET = ./build/tinyted
 SRC_DIR = ./src
-OBJ_DIR = ./build
+OBJ_DIR = ./build/obj
 INCLUDE_DIR = ./include
 
 # Collect all source files

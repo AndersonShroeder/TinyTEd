@@ -2,6 +2,8 @@
 #include <keys.hh>
 #include <errmgr.hh>
 #include <termgui.hh>
+#include <fileio.hh>
+#include <alert.hh>
 
 Editor::Editor(Config &cfg) : config(cfg) {};
 
@@ -66,7 +68,7 @@ void Editor::moveCursor(int c) {
                 config.cx--;
             } else if (config.cy > 0) {
                 config.cy--;
-                config.cx = data->sRaw.size();
+                config.cx = config.fileData.at(config.cy)->sRaw.size();
             }
             break;
         case ARROW_DOWN:
@@ -90,12 +92,27 @@ void Editor::moveCursor(int c) {
 }
 
 int Editor::processKey(bool breakAny) {
+    static int quitStroke = 1;
     int c = this->readKey();
     if (breakAny) return 0;
     switch (c) {
+        // TODO: Newline
+        case '\r':
+            break;
         case K_CTRL('q'): {
+            if (config.modified && quitStroke > 0) {
+                Alert::setStatusMsg(this->config, "UNSAVED CHANGES | Press quit again to discard changes");
+                quitStroke--;
+                break;
+            }
             return -1;
         }
+
+        case K_CTRL('s'):
+            if (1 == FileIO::saveFile(this->config)) {
+                // TODO: error Checking
+            }
+            break;
 
         case PAGE_UP:
         case PAGE_DOWN: {
@@ -124,6 +141,9 @@ int Editor::processKey(bool breakAny) {
             }
             break;
 
+        // TODO: implement
+        case BACKSPACE:
+        case K_CTRL('h'):
         case DEL:
             // handle delete
             break;
@@ -135,10 +155,45 @@ int Editor::processKey(bool breakAny) {
             moveCursor(c);
             break;
 
+        // Ignore for now
+        case K_CTRL('l'):
+        case '\x1b':
+            break;
+
         default:
             // handle other keys
+            insertChar(c);
             break;
     }
 
+    quitStroke = 1;
     return 0;
 }
+
+void Editor::insertCharAtRow( char c) {
+    size_t insertRowNum = this->config.cy;
+    size_t insertColNum = this->config.cx;
+
+    std::shared_ptr<Row> row = this->config.fileData.at(insertRowNum);
+
+    // Allow insertion at end of row
+    if (insertColNum > row->sRaw.size()) {
+        insertColNum = row->sRaw.size();
+    }
+
+    // TODO: this isn't great... we probably shouldn't need to update sRender as well
+    // Insert a single character
+    row->sRaw.insert(insertColNum, 1, c);
+    row->sRender = row->sRaw;
+    config.modified++;
+}
+
+void Editor::insertChar(char c) {
+    // TODO: Make an append function? Needs to also update modified
+    if (this->config.cy == this->config.fileData.size()) {
+        config.fileData.emplace_back(std::make_shared<Row>(""));
+    }
+    insertCharAtRow(c);
+    this->config.cx++;
+}
+

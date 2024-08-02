@@ -135,13 +135,6 @@ public:
     void initGUI();
 
     /**
-     * @brief Sets the status message to be displayed on the status bar.
-     * 
-     * @param msg The status message to display.
-     */
-    void setStatusMsg(const std::string &msg);
-
-    /**
      * @brief Resets the screen.
      */
     void reset();

@@ -4,6 +4,7 @@
 #include <config.hh>
 #include <fileio.hh>
 #include <iostream>
+#include <alert.hh>
 
 int main(int argc, char *argv[]) {
     Config config;
@@ -22,7 +23,7 @@ int main(int argc, char *argv[]) {
         exit(0);
     }
 
-    terminalGUI.setStatusMsg("HELP: Ctrl-Q = quit");
+    Alert::setStatusMsg(config, "HELP: Ctrl-Q = quit");
     
     while (true) {
         terminalGUI.draw();

@@ -14,5 +14,6 @@ public:
      * @param config The configuration object where file data will be loaded.
      * @param path The path to the file to be opened.
      */
-    static void openFile(Config& config, const char *path);
+    static int openFile(Config& config, const char *path);
+    static int saveFile(Config& cfg);
 };
