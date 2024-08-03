@@ -2,6 +2,8 @@
 #include <errmgr.hh>
 #include <fstream>
 #include <regex>
+#include <sstream>
+#include <config.hh>
 
 int FileIO::openFile(Config& config, const char *path) {
     std::ifstream ifs(path);

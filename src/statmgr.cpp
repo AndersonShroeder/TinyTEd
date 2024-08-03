@@ -1,6 +1,7 @@
 #include <statmgr.hh>
 #include <errmgr.hh>
 #include <config.hh>
+#include <unistd.h>
 
 void StateMgr::enterRaw(Config& config) {
     if (tcgetattr(STDIN_FILENO, &config.tty) == -1) {

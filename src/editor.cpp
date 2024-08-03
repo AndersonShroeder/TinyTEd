@@ -4,6 +4,7 @@
 #include <termgui.hh>
 #include <fileio.hh>
 #include <alert.hh>
+#include <unistd.h>
 
 Editor::Editor(Config &cfg) : config(cfg) {};
 
@@ -100,11 +101,11 @@ int Editor::processKey(bool breakAny) {
         case '\r':
             break;
         case K_CTRL('q'): {
-            if (config.modified && quitStroke > 0) {
-                Alert::setStatusMsg(this->config, "UNSAVED CHANGES | Press quit again to discard changes");
-                quitStroke--;
-                break;
-            }
+            // if (config.modified && quitStroke > 0) {
+            //     Alert::setStatusMsg(this->config, "UNSAVED CHANGES | Press quit again to discard changes");
+            //     quitStroke--;
+            //     break;
+            // }
             return -1;
         }
 
@@ -145,7 +146,8 @@ int Editor::processKey(bool breakAny) {
         case BACKSPACE:
         case K_CTRL('h'):
         case DEL:
-            // handle delete
+            if (c == DEL) moveCursor(ARROW_RIGHT); // delete character to the right of cursor currently
+            delChar();
             break;
 
         case ARROW_UP:
@@ -170,7 +172,8 @@ int Editor::processKey(bool breakAny) {
     return 0;
 }
 
-void Editor::insertCharAtRow( char c) {
+// TODO: these should probably not rely on the state of config and should just be static funcs
+void Editor::insertCharAtRow(char c) {
     size_t insertRowNum = this->config.cy;
     size_t insertColNum = this->config.cx;
 
@@ -191,9 +194,49 @@ void Editor::insertCharAtRow( char c) {
 void Editor::insertChar(char c) {
     // TODO: Make an append function? Needs to also update modified
     if (this->config.cy == this->config.fileData.size()) {
-        config.fileData.emplace_back(std::make_shared<Row>(""));
+        config.fileData.emplace_back(std::make_shared<Row>());
     }
     insertCharAtRow(c);
     this->config.cx++;
+}
+
+void Editor::delCharAtRow() {
+    size_t delRowNum = this->config.cy;
+    size_t delColNum = this->config.cx - 1; // Delete char left of curosr
+
+    std::shared_ptr<Row> row = this->config.fileData.at(delRowNum);
+    row->sRaw.erase(delColNum, 1);
+    row->sRender = row->sRaw;
+}
+
+void Editor::delChar() {
+    if (this->config.cy == this->config.fileData.size()) {
+        return;
+    }
+    if (this->config.cx == 0 && this->config.cy == 0) {
+        return;
+    }
+
+    if (this->config.cx > 0) {
+        delCharAtRow();
+        this->config.cx--;
+    } 
+    
+    else {
+        // Extract relevant config data
+        size_t oldcy = this->config.cy;
+        size_t newcy = --(this->config.cy);
+        std::vector<std::shared_ptr<Row>> *data = &config.fileData;
+
+        // append string
+        data->at(newcy)->sRaw += data->at(oldcy)->sRaw;
+        data->at(newcy)->sRender += data->at(oldcy)->sRender;
+        this->config.cx = data->at(newcy)->sRaw.size();
+
+        // Pop element at oldcy
+        std::shared_ptr<Row> popped = *(data->erase(data->begin() + oldcy));
+    }
+
+    config.modified++;
 }
 

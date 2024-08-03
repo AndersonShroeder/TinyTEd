@@ -4,6 +4,7 @@
 #include <errmgr.hh>
 #include <alert.hh>
 #include <ctime>
+#include <unistd.h>
 
 TerminalGUI::TerminalGUI(Config &cfg) : config(cfg) {};
 

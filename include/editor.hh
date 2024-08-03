@@ -50,4 +50,8 @@ public:
     void insertCharAtRow(char c);
 
     void insertChar(char c);
+
+    void delCharAtRow();
+    
+    void delChar();
 };
