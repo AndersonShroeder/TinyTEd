@@ -99,6 +99,7 @@ int Editor::processKey(bool breakAny) {
     switch (c) {
         // TODO: Newline
         case '\r':
+            insertNewLine();
             break;
         case K_CTRL('q'): {
             // if (config.modified && quitStroke > 0) {
@@ -229,9 +230,9 @@ void Editor::delChar() {
         std::vector<std::shared_ptr<Row>> *data = &config.fileData;
 
         // append string
+        this->config.cx = data->at(newcy)->sRaw.size();
         data->at(newcy)->sRaw += data->at(oldcy)->sRaw;
         data->at(newcy)->sRender += data->at(oldcy)->sRender;
-        this->config.cx = data->at(newcy)->sRaw.size();
 
         // Pop element at oldcy
         std::shared_ptr<Row> popped = *(data->erase(data->begin() + oldcy));
@@ -240,3 +241,20 @@ void Editor::delChar() {
     config.modified++;
 }
 
+void Editor::insertNewLine() {
+    if (this->config.cx == 0) {
+        this->config.fileData.insert(this->config.fileData.begin() + this->config.cy, std::make_shared<Row>());
+    } else {
+        std::shared_ptr<Row> r1 = (this->config.fileData.at(this->config.cy));
+
+        // add next row
+        std::string sub = r1->sRaw.substr(this->config.cx, r1->sRaw.size());
+        this->config.fileData.insert(this->config.fileData.begin() + this->config.cy + 1, std::make_shared<Row>(Row{sub, sub}));
+
+        // Update curr row
+        r1->sRaw = r1->sRaw.substr(0, this->config.cx);
+        r1->sRender = r1->sRaw;
+    }
+    this->config.cy++;
+    this->config.cx = 0;
+}

@@ -54,4 +54,6 @@ public:
     void delCharAtRow();
     
     void delChar();
+
+    void insertNewLine();
 };
