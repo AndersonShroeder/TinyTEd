@@ -16,7 +16,45 @@
 struct Row {
     std::string sRaw;
     std::string sRender;
+    size_t size;
 };
+
+struct TTEdFileData {
+    std::string filename;
+    std::vector<std::shared_ptr<Row>> fileData;
+    size_t size;
+    int modified = 0;
+
+    // Methods
+
+};
+
+struct TTEdStatus {
+    std::string statusMsg;
+    time_t statusTime = 0;
+
+    // Methods
+
+};
+
+struct TTEdCursor {
+    size_t rOffset;
+    size_t cOffset;
+    size_t cx;
+    size_t cy;
+    size_t rx;
+
+    // Methods
+};
+
+struct TTEdTermData {
+    size_t sRow;
+    size_t sCol;
+    struct termios tty;
+
+    // Methods
+};
+
 
 /**
  * @struct Config

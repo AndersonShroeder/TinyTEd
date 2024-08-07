@@ -19,13 +19,6 @@ private:
     int r;
 
     /**
-     * @brief Reads a single key from input.
-     * 
-     * @return The ASCII value of the key read.
-     */
-    int readKey();
-
-    /**
      * @brief Moves the cursor based on the given command.
      * 
      * @param c The command for cursor movement (e.g., ARROW_UP, ARROW_DOWN).
