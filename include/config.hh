@@ -6,6 +6,16 @@
 
 #define TABSTOP 4
 
+struct TTEdCursor {
+    size_t rOffset;
+    size_t cOffset;
+    size_t cx;
+    size_t cy;
+    size_t rx;
+
+    // Methods
+};
+
 /**
  * @struct Row
  * @brief Represents a single row of text in the editor.
@@ -17,16 +27,10 @@ struct Row {
     std::string sRaw;
     std::string sRender;
     size_t size;
-};
 
-struct TTEdFileData {
-    std::string filename;
-    std::vector<std::shared_ptr<Row>> fileData;
-    size_t size;
-    int modified = 0;
-
-    // Methods
-
+    void insertChar(TTEdCursor &cursor, char c);
+    void deleteChar(TTEdCursor &cursor);
+    Row splitRow(TTEdCursor &cursor);
 };
 
 struct TTEdStatus {
@@ -37,24 +41,48 @@ struct TTEdStatus {
 
 };
 
-struct TTEdCursor {
-    size_t rOffset;
-    size_t cOffset;
-    size_t cx;
-    size_t cy;
-    size_t rx;
-
-    // Methods
-};
-
 struct TTEdTermData {
     size_t sRow;
     size_t sCol;
     struct termios tty;
 
-    // Methods
+    /**
+     * @brief Gets the current size of the terminal window.
+     * 
+     * @param config The configuration object to store the window size.
+     * @return 0 on success, -1 on failure.
+     */
+    void getWindowSize();
+
+    /**
+     * @brief Enters raw mode for terminal input processing.
+     * 
+     * @param config The configuration object holding terminal settings.
+     */
+    void enterRaw();
+
+    /**
+     * @brief Exits raw mode and restores the previous terminal settings.
+     * 
+     * @param config The configuration object holding terminal settings.
+     */
+    void exitRaw();
 };
 
+
+struct TTEdFileData {
+    std::string filename;
+    std::vector<std::shared_ptr<Row>> fileData;
+    size_t size;
+    int modified = 0;
+
+    // Methods
+    void insertRow(size_t pos, Row row = {"", ""});
+    void insertChar(TTEdCursor &cursor, char c);
+    void deleteChar(TTEdCursor &cursor);
+    void insertNewLine(TTEdCursor &cursor);
+    std::stringstream streamify();
+};
 
 /**
  * @struct Config
@@ -75,21 +103,8 @@ struct TTEdTermData {
  * @param statusTime Time when the status message was set.
  */
 struct Config {
-    size_t sRow;
-    size_t sCol;
-    size_t rOffset;
-    size_t cOffset;
-    size_t cx;
-    size_t cy;
-    size_t rx;
-    int modified = 0;
-    struct termios tty;
-    std::vector<std::shared_ptr<Row>> fileData;
-    std::string filename;
-    std::string statusMsg;
-    time_t statusTime = 0;
+    TTEdCursor cursor;
+    TTEdTermData term;
+    TTEdFileData fileData;
+    TTEdStatus status;
 };
-
-namespace ConfigTools {
-    std::stringstream accFileData(Config &cfg);
-}

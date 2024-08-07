@@ -114,14 +114,6 @@ public:
     void splashScreen(Editor &e);
 
     /**
-     * @brief Gets the current size of the terminal window.
-     * 
-     * @param config The configuration object to store the window size.
-     * @return 0 on success, -1 on failure.
-     */
-    static int getWindowSize(Config& config);
-
-    /**
      * @brief Gets the current cursor position in the terminal.
      * 
      * @param config The configuration object to store the cursor position.

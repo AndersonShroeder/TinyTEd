@@ -15,7 +15,7 @@ int main(int argc, char *argv[]) {
     terminalGUI.initGUI();
     // terminalGUI.splashScreen(editor);
     if (argc >= 2) {
-        FileIO::openFile(config, argv[1]);
+        FileIO::openFile(config.fileData, argv[1]);
     }
     else {
         std::cout << "NEED A FILE LOL\r\n";
