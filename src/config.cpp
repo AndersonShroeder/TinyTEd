@@ -127,7 +127,33 @@ void TTEdFileData::insertChar(TTEdCursor &cursor, char c) {
 }
 
 void TTEdFileData::deleteChar(TTEdCursor &cursor) {
+    if (cursor.cy == this->size) {
+        return;
+    }
+    if (cursor.cx == 0 && cursor.cy == 0) {
+        return;
+    }
+
+    if (cursor.cx > 0) {
+        this->at(cursor.cy)->deleteChar(cursor);
+        cursor.cx--;
+    } 
     
+    else {
+        // Extract relevant config data
+        size_t oldcy = cursor.cy;
+        size_t newcy = --(cursor.cy);
+
+        // append string
+        cursor.cx = this->at(newcy)->sRaw.size();
+        this->at(newcy)->sRaw += this->at(oldcy)->sRaw;
+        this->at(newcy)->sRender += this->at(oldcy)->sRender;
+
+        // Pop element at oldcy
+        std::shared_ptr<Row> popped = *(this->fileData.erase(this->fileData.begin() + oldcy));
+    }
+
+    this->modified++;
 }
 
 void TTEdFileData::insertNewLine(TTEdCursor &cursor) {
