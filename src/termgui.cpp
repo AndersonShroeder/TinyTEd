@@ -8,6 +8,8 @@
 #include <iostream>
 #include <inhandler.hh>
 
+#define CURSOR_X_SHIFT 3
+
 TerminalGUI::TerminalGUI(Config &cfg) : config(cfg) {};
 
 void TerminalGUI::flushBuf() {
@@ -18,7 +20,7 @@ void TerminalGUI::flushBuf() {
 
 void TerminalGUI::updateCursor(TTEdCursor &cursor) {
     std::stringstream ss;
-    ss << "\x1b[" << (cursor.cy - cursor.rOffset) + 1 << ";" << cursor.rx + 1 << "H";
+    ss << "\x1b[" << (cursor.cy - cursor.rOffset) + 1 << ";" << cursor.rx + CURSOR_X_SHIFT << "H";
     buf << ss.str();
 }
 
@@ -47,7 +49,7 @@ void TerminalGUI::drawRows(TTEdCursor &cursor, TTEdFileData fData, TTEdTermData 
                 end = start + shift;
             }
 
-            buf << std::string(start, end) << "\x1b[K\r\n";
+            buf << "~ " << std::string(start, end) << "\x1b[K\r\n";
         }
     }
 }

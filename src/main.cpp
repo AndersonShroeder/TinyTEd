@@ -4,8 +4,14 @@
 #include <iostream>
 #include <inhandler.hh>
 #include <vector>
+#include <map>
 
-void processInput(Config config, int argc, char *argv[]) {
+const std::map<char, std::string> commands = {
+    {'v', "Launches TinyTEd in verbose mode"},
+    {'h', "Lists launch options for TinyTEd"},
+};
+
+void processInput(Config &config, int argc, char *argv[]) {
     const std::vector<std::string> args(argv + 1, argv + argc);
     for (std::string arg: args) {
         // CLI option
@@ -14,6 +20,15 @@ void processInput(Config config, int argc, char *argv[]) {
             std::vector<char> chain(arg.begin() + 1, arg.end());
             for (char c: chain) {
                 switch (c) {
+                case 'v':
+                    // terminalGUI.splashScreen(editor);
+                    break;
+                case 'h':
+                    std::cout << "TinyTEd Help Page:\n";
+                    for (std::pair<char, std::string> p: commands) {
+                        std::cout << '\t' << p.first << " - " << p.second << '\n'; 
+                    }
+                    exit(0);
                 default:
                     std::cout << "Unknown argument: " << c << std::endl;
                     exit(0);
@@ -34,7 +49,6 @@ int main(int argc, char *argv[]) {
     processInput(config, argc, argv);
     config.term.enterRaw();
     config.term.getWindowSize();
-    // terminalGUI.splashScreen(editor);
 
     config.status.setStatusMsg("HELP: Ctrl-Q = quit");
     while (true) {
