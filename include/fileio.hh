@@ -1,6 +1,7 @@
 #pragma once
 
 #include <config.hh>
+#include <string>
 
 /**
  * @class FileIO
@@ -14,6 +15,6 @@ public:
      * @param config The configuration object where file data will be loaded.
      * @param path The path to the file to be opened.
      */
-    static int openFile(TTEdFileData& config, const char *path);
+    static int openFile(TTEdFileData& config, std::string path);
     static int saveFile(TTEdFileData& cfg);
 };

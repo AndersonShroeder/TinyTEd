@@ -6,7 +6,7 @@
 #include <config.hh>
 #include <iostream>
 
-int FileIO::openFile(TTEdFileData& fileData, const char *path) {
+int FileIO::openFile(TTEdFileData& fileData, std::string path) {
     std::ifstream ifs(path);
     if (!ifs) ErrorMgr::err("failed to open file");
     fileData.filename = path;

@@ -2,7 +2,6 @@
 
 #include <string>
 #include <config.hh>
-#include <editor.hh>
 #include <sstream>
 
 /**
@@ -80,7 +79,7 @@ public:
      * 
      * @param e The editor instance used to process user input.
      */
-    void splashScreen(Editor &e);
+    void splashScreen();
 
     /**
      * @brief Resets the screen.

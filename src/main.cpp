@@ -1,31 +1,45 @@
 #include <termgui.hh>
-#include <editor.hh>
 #include <config.hh>
 #include <fileio.hh>
 #include <iostream>
+#include <inhandler.hh>
+#include <vector>
+
+void processInput(Config config, int argc, char *argv[]) {
+    const std::vector<std::string> args(argv + 1, argv + argc);
+    for (std::string arg: args) {
+        // CLI option
+        if (arg.at(0) == '-') {
+            // Allow chained arguments
+            std::vector<char> chain(arg.begin() + 1, arg.end());
+            for (char c: chain) {
+                switch (c) {
+                default:
+                    std::cout << "Unknown argument: " << c << std::endl;
+                    exit(0);
+                }
+            }
+        }
+
+        // Assume file
+        else {
+            FileIO::openFile(config.fileData, arg);
+        }
+    }
+}
 
 int main(int argc, char *argv[]) {
     Config config;
+    TerminalGUI terminalGUI(config);
+    processInput(config, argc, argv);
     config.term.enterRaw();
     config.term.getWindowSize();
-
-    Editor editor(config);
-    TerminalGUI terminalGUI(config);
     // terminalGUI.splashScreen(editor);
-    if (argc >= 2) {
-        FileIO::openFile(config.fileData, argv[1]);
-    }
-    // else {
-    //     std::cout << "NEED A FILE LOL\r\n";
-    //     config.term.exitRaw();
-    //     exit(0);
-    // }
 
     config.status.setStatusMsg("HELP: Ctrl-Q = quit");
-    
     while (true) {
         terminalGUI.draw();
-        if (editor.processKey() < 0) {
+        if (InputHandler::processKey(config.cursor, config.fileData, config.term) < 0) {
             break;
         }
     }

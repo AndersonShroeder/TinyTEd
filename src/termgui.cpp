@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <termacts.hh>
 #include <iostream>
+#include <inhandler.hh>
 
 TerminalGUI::TerminalGUI(Config &cfg) : config(cfg) {};
 
@@ -46,9 +47,7 @@ void TerminalGUI::drawRows(TTEdCursor &cursor, TTEdFileData fData, TTEdTermData 
                 end = start + shift;
             }
 
-            buf << std::string(start, end);
-            buf << "\x1b[K";
-            buf << "\r\n";
+            buf << std::string(start, end) << "\x1b[K\r\n";
         }
     }
 }
@@ -68,9 +67,7 @@ void TerminalGUI::drawStatusBar(TTEdCursor &cursor, TTEdFileData &fData, TTEdTer
 
     ss << leftStatus << spaces << rightStatus;
 
-    buf << ss.str().substr(0, tData.sCol);
-    buf << "\x1b[m";
-    buf << "\r\n";
+    buf << ss.str().substr(0, tData.sCol) << "\x1b[m\r\n";
 }
 
 void TerminalGUI::drawMessageBar(TTEdTermData tData, TTEdStatus status) {
@@ -133,11 +130,11 @@ void TerminalGUI::draw() {
     flushBuf();
 }
 
-void TerminalGUI::splashScreen(Editor &e) {
+void TerminalGUI::splashScreen() {
     std::string s;
     genCoverPage(config, s);
     write(STDOUT_FILENO, s.c_str(), s.size());
-    e.processKey();
+    InputHandler::processKey(config.cursor, config.fileData, config.term);
 }
 
 void TerminalGUI::reset() {
