@@ -8,7 +8,7 @@
 Editor::Editor(Config &cfg) : config(cfg) {};
 
 void Editor::moveCursor(int c) {
-    std::shared_ptr<Row> data = config.cursor.cy >= config.fileData.size ? nullptr : config.fileData.at(config.cursor.cy);
+    std::shared_ptr<Row> data = config.cursor.cy >= config.fileData.size() ? nullptr : config.fileData.at(config.cursor.cy);
     
     switch(c) {
         case ARROW_UP:
@@ -23,7 +23,7 @@ void Editor::moveCursor(int c) {
             }
             break;
         case ARROW_DOWN:
-            if (config.cursor.cy < config.fileData.size) config.cursor.cy++;
+            if (config.cursor.cy < config.fileData.size()) config.cursor.cy++;
             break;
         case ARROW_RIGHT:
             if (data && config.cursor.cx < data->sRaw.size()) {
@@ -35,7 +35,7 @@ void Editor::moveCursor(int c) {
             break;
     }
 
-    data = config.cursor.cy >= config.fileData.size ? nullptr : config.fileData.at(config.cursor.cy);
+    data = config.cursor.cy >= config.fileData.size() ? nullptr : config.fileData.at(config.cursor.cy);
     size_t newlen = data ? data->sRaw.size() : 0;
     if (config.cursor.cx > newlen) {
         config.cursor.cx = newlen;
@@ -72,8 +72,8 @@ int Editor::processKey(bool breakAny) {
                 config.cursor.cy = config.cursor.rOffset;
             } else if (c == PAGE_DOWN) {
                 config.cursor.cy = config.cursor.rOffset + config.term.sRow - 1;
-                if (config.cursor.cy > config.fileData.size) {
-                    config.cursor.cy = config.fileData.size;
+                if (config.cursor.cy > config.fileData.size()) {
+                    config.cursor.cy = config.fileData.size();
                 }
             }
             
@@ -88,7 +88,7 @@ int Editor::processKey(bool breakAny) {
             config.cursor.cx = 0;
             break;
         case END:
-            if (config.cursor.cy < config.fileData.size) {
+            if (config.cursor.cy < config.fileData.size()) {
                 config.cursor.cx = config.fileData.at(config.cursor.cy)->sRaw.size();
             }
             break;

@@ -18,7 +18,6 @@ int FileIO::openFile(TTEdFileData& fileData, const char *path) {
         std::string s2 = std::regex_replace(s1, std::regex("\t"), spaceStr);
         fileData.fileData.emplace_back(std::make_shared<Row>(Row{s1, s2}));
         // fileData.insertRow(fileData.size, Row{s1, s2});
-        fileData.size++;
     }
 
     ifs.close();

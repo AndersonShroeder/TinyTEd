@@ -53,10 +53,10 @@ struct TTEdCursor {
 struct Row {
     std::string sRaw;
     std::string sRender;
-    size_t size;
 
     void insertChar(TTEdCursor &cursor, char c);
     void deleteChar(TTEdCursor &cursor);
+    size_t size();
     Row splitRow(TTEdCursor &cursor);
 };
 
@@ -100,11 +100,11 @@ struct TTEdTermData {
 struct TTEdFileData {
     std::string filename;
     std::vector<std::shared_ptr<Row>> fileData;
-    size_t size;
     int modified = 0;
 
     // Methods
     void insertRow(size_t pos, Row row = {"", ""});
+    size_t size();
     std::shared_ptr<Row> at(size_t pos);
 
     // These three functions could maybe be moved into the main config struct

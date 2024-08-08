@@ -39,12 +39,12 @@ private:
     /**
      * @brief Draws the status bar at the bottom of the screen.
      */
-    void drawStatusBar();
+    void drawStatusBar(TTEdCursor &cursor, TTEdFileData &fData, TTEdTermData &tData);
 
     /**
      * @brief Draws the message bar at the bottom of the screen.
      */
-    void drawMessageBar();
+    void drawMessageBar(TTEdTermData tData, TTEdStatus status);
 
     /**
      * @brief Centers the given text within the current screen width.

@@ -10,12 +10,11 @@
 
 void Row::insertChar(TTEdCursor &cursor, char c) {
     // Allow insertion at end of row
-    size_t insertColNum = cursor.cx > this->size ? this->size : cursor.cx;
+    size_t insertColNum = cursor.cx > this->size() ? this->size() : cursor.cx;
 
     // Insert a single character
     this->sRaw.insert(insertColNum, 1, c);
     this->sRender = this->sRaw;
-    this->size++;
 }
 
 void Row::deleteChar(TTEdCursor &cursor) {
@@ -24,18 +23,21 @@ void Row::deleteChar(TTEdCursor &cursor) {
 
     this->sRaw.erase(delColNum, 1);
     this->sRender = this->sRaw;
-    this->size--;
 }
+
+size_t Row::size() {
+    return this->sRaw.size();
+}
+
 
 Row Row::splitRow(TTEdCursor &cursor) {
     // Make new row
-    std::string sub = this->sRaw.substr(cursor.cx, this->size);
+    std::string sub = this->sRaw.substr(cursor.cx, this->size());
     Row newRow{sub, sub};
 
     // Update curr row
     this->sRaw = this->sRaw.substr(0, cursor.cx);
     this->sRender = this->sRaw;
-    this->size = sRaw.size();
 
     return newRow;
 }
@@ -110,13 +112,17 @@ void TTEdFileData::insertRow(size_t pos, Row row) {
     this->fileData.insert(this->fileData.begin() + pos, std::make_shared<Row>(row));
 }
 
+size_t TTEdFileData::size() {
+    return this->fileData.size();
+}
+
 std::shared_ptr<Row> TTEdFileData::at(size_t pos) {
     return this->fileData.at(pos);
 }
 
 void TTEdFileData::insertChar(TTEdCursor &cursor, char c) {
     // If inserting at EOF make a new line to insert onto
-    if (cursor.cy == this->size) {
+    if (cursor.cy == this->size()) {
         this->insertRow(cursor.cy);
     }
     
@@ -127,7 +133,7 @@ void TTEdFileData::insertChar(TTEdCursor &cursor, char c) {
 }
 
 void TTEdFileData::deleteChar(TTEdCursor &cursor) {
-    if (cursor.cy == this->size) {
+    if (cursor.cy == this->size()) {
         return;
     }
     if (cursor.cx == 0 && cursor.cy == 0) {
@@ -182,7 +188,7 @@ std::stringstream TTEdFileData::streamify() {
 void Config::scroll() {
         cursor.rx = 0;
         
-        if (cursor.cy < fileData.size) {
+        if (cursor.cy < fileData.size()) {
             cursor.rx = cursor.rowCxToRx(fileData.fileData.at(cursor.cy));
         }
 

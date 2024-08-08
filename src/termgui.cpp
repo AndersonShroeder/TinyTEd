@@ -23,17 +23,27 @@ void TerminalGUI::updateCursor(TTEdCursor &cursor) {
 
 void TerminalGUI::drawRows(TTEdCursor &cursor, TTEdFileData fData, TTEdTermData tData) {
     for (size_t r = 0; r < tData.sRow; r++) {
-        if (r + cursor.rOffset >= fData.size) {
-            buf << "~\x1b[K\r\n";
-        } else {
-            std::string::const_iterator start = fData.at(r + cursor.rOffset)->sRender.cbegin();
-            std::string::const_iterator end = fData.at(r + cursor.rOffset)->sRender.cend();
+        size_t rowLoc = r + cursor.rOffset;
 
-            if (cursor.cOffset < fData.at(r + cursor.rOffset)->sRender.size()) {
+        if (rowLoc >= fData.size()) {
+            buf << "~\x1b[K\r\n";
+        }
+        
+        else {
+            std::shared_ptr<Row> row = fData.at(rowLoc);
+
+            // Get string as iterators so we can modify starting/ending point to render
+            std::string::const_iterator start, end;
+            start = row->sRender.cbegin();
+            end = row->sRender.cend();
+
+            if (cursor.cOffset < row->size()) {
                 start += cursor.cOffset;
             }
-            if (fData.at(r + cursor.rOffset)->sRender.size() > (cursor.cOffset + tData.sCol)) {
-                end = fData.at(r + cursor.rOffset)->sRender.cbegin() + (cursor.cOffset + tData.sCol);
+            
+            size_t shift = cursor.cOffset + tData.sCol;
+            if (row->sRender.size() > (shift)) {
+                end = start + shift;
             }
 
             buf << std::string(start, end);
@@ -43,31 +53,31 @@ void TerminalGUI::drawRows(TTEdCursor &cursor, TTEdFileData fData, TTEdTermData 
     }
 }
 
-void TerminalGUI::drawStatusBar() {
+void TerminalGUI::drawStatusBar(TTEdCursor &cursor, TTEdFileData &fData, TTEdTermData &tData) {
     buf << "\x1b[7m";
+
     std::stringstream ss;
 
-    std::string leftStatus = config.fileData.filename + " - " + std::to_string(config.fileData.size) + " lines";
-    // {row}, {col} {modified?}
-    std::string rightStatus = std::to_string(config.cursor.cy + 1) + "," + std::to_string(config.cursor.cx + 1);
-    rightStatus += config.fileData.modified > 0 ? " M" : "";
-    ss << leftStatus;
-
-    while (ss.str().size() < config.term.sCol - rightStatus.size()) {
-        ss << " ";
+    std::string leftStatus = fData.filename + " - " + std::to_string(fData.size()) + " lines";
+    std::string rightStatus = std::to_string(cursor.cy + 1) + "," + std::to_string(cursor.cx + 1);
+    if (fData.modified > 0) {
+        rightStatus += " M";
     }
-    ss << rightStatus;
 
-    buf << ss.str().substr(0, config.term.sCol);
+    std::string spaces(tData.sCol - rightStatus.size() - leftStatus.size(), ' ');
+
+    ss << leftStatus << spaces << rightStatus;
+
+    buf << ss.str().substr(0, tData.sCol);
     buf << "\x1b[m";
     buf << "\r\n";
 }
 
-void TerminalGUI::drawMessageBar() {
+void TerminalGUI::drawMessageBar(TTEdTermData tData, TTEdStatus status) {
     buf << "\x1b[K";
-    int msgLen = std::min(config.status.statusMsg.size(), config.term.sCol);
-    if (msgLen && (std::time(nullptr) - config.status.statusTime) < 5) {
-        buf << config.status.statusMsg.substr(0, msgLen);
+    int msgLen = std::min(status.statusMsg.size(), tData.sCol);
+    if (msgLen && (std::time(nullptr) - status.statusTime) < 5) {
+        buf << status.statusMsg.substr(0, msgLen);
     }
 }
 
@@ -116,8 +126,8 @@ void TerminalGUI::draw() {
     TermActions::resetCursor(buf);
     config.scroll();
     drawRows(config.cursor, config.fileData, config.term);
-    drawStatusBar();
-    drawMessageBar();
+    drawStatusBar(config.cursor, config.fileData, config.term);
+    drawMessageBar(config.term, config.status);
     updateCursor(config.cursor);
     TermActions::showCursor(buf);
     flushBuf();
