@@ -6,5 +6,5 @@ namespace InputReader {
      * 
      * @return The ASCII value of the key read.
      */
-    static int readKey();
-}
+    int readKey();
+};

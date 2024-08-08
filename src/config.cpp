@@ -2,6 +2,7 @@
 #include <sstream>
 #include <unistd.h>
 #include <sys/ioctl.h>
+#include <ctime>
 
 ///////////////////
 // ROW METHODS
@@ -37,6 +38,29 @@ Row Row::splitRow(TTEdCursor &cursor) {
     this->size = sRaw.size();
 
     return newRow;
+}
+
+///////////////////
+// CURSOR METHODS
+///////////////////
+
+int TTEdCursor::rowCxToRx(std::shared_ptr<Row> row) {
+    for (size_t j = 0; j < this->cx; j++) {
+        if (row->sRaw.at(j) == '\t')
+            this->rx += (TABSTOP - 1) - (this->rx % TABSTOP);
+        this->rx++;
+    }
+
+    return rx;
+}
+
+///////////////////
+// STATUS METHODS
+///////////////////
+
+void TTEdStatus::setStatusMsg(const std::string &msg) {
+    this->statusMsg = msg;
+    this->statusTime = std::time(nullptr);
 }
 
 ///////////////////
@@ -86,6 +110,10 @@ void TTEdFileData::insertRow(size_t pos, Row row) {
     this->fileData.insert(this->fileData.begin() + pos, std::make_shared<Row>(row));
 }
 
+std::shared_ptr<Row> TTEdFileData::at(size_t pos) {
+    return this->fileData.at(pos);
+}
+
 void TTEdFileData::insertChar(TTEdCursor &cursor, char c) {
     // If inserting at EOF make a new line to insert onto
     if (cursor.cy == this->size) {
@@ -124,3 +152,27 @@ std::stringstream TTEdFileData::streamify() {
     }
     return ss;
 }
+
+void Config::scroll() {
+        cursor.rx = 0;
+        
+        if (cursor.cy < fileData.size) {
+            cursor.rx = cursor.rowCxToRx(fileData.fileData.at(cursor.cy));
+        }
+
+        if (cursor.cy < cursor.rOffset)  {
+            cursor.rOffset = cursor.cy;
+        }
+
+        if (cursor.cy >= cursor.rOffset + term.sRow) {
+            cursor.rOffset = cursor.cy - term.sRow + 1;
+        }
+
+        if (cursor.rx < cursor.cOffset) {
+            cursor.cOffset = cursor.rx;
+        }
+
+        if (cursor.rx >= cursor.cOffset + term.sCol) {
+            cursor.cOffset = cursor.rx - term.sCol + 1;
+        }
+    }

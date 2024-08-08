@@ -22,37 +22,6 @@ private:
     Config& config;
 
     /**
-     * @brief Clears the screen.
-     */
-    void wipeScreen();
-
-    /**
-     * @brief Resets the cursor position to the top-left corner of the screen.
-     */
-    void resetCursor();
-
-    /**
-     * @brief Hides the cursor to prevent flickering.
-     */
-    void hideCursor();
-
-    /**
-     * @brief Shows the cursor.
-     */
-    void showCursor();
-
-    /**
-     * @brief Converts the cursor position to the render position for the row.
-     * @param row The row to render to.
-     */
-    int rowCxToRx(std::shared_ptr<Row> row);
-
-    /**
-     * @brief Handles scrolling of the text and cursor.
-     */
-    void scroll();
-
-    /**
      * @brief Flushes the accumulated terminal commands from the buffer to the terminal.
      */
     void flushBuf();
@@ -60,12 +29,12 @@ private:
     /**
      * @brief Updates the cursor position on the screen.
      */
-    void updateCursor();
+    void updateCursor(TTEdCursor &cursor);
 
     /**
      * @brief Draws the rows of text on the screen.
      */
-    void drawRows();
+    void drawRows(TTEdCursor &cursor, TTEdFileData fData, TTEdTermData tData);
 
     /**
      * @brief Draws the status bar at the bottom of the screen.
@@ -112,19 +81,6 @@ public:
      * @param e The editor instance used to process user input.
      */
     void splashScreen(Editor &e);
-
-    /**
-     * @brief Gets the current cursor position in the terminal.
-     * 
-     * @param config The configuration object to store the cursor position.
-     * @return 0 on success, -1 on failure.
-     */
-    static int getCursorPosition(Config& config);
-
-    /**
-     * @brief Initializes the terminal GUI, setting up initial screen size and other settings.
-     */
-    void initGUI();
 
     /**
      * @brief Resets the screen.

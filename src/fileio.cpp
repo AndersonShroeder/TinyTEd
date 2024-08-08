@@ -4,6 +4,7 @@
 #include <regex>
 #include <sstream>
 #include <config.hh>
+#include <iostream>
 
 int FileIO::openFile(TTEdFileData& fileData, const char *path) {
     std::ifstream ifs(path);
@@ -15,7 +16,8 @@ int FileIO::openFile(TTEdFileData& fileData, const char *path) {
     std::string s1;
     while (std::getline(ifs, s1)) {
         std::string s2 = std::regex_replace(s1, std::regex("\t"), spaceStr);
-        fileData.insertRow(fileData.size, Row{s1, s2});
+        fileData.fileData.emplace_back(std::make_shared<Row>(Row{s1, s2}));
+        // fileData.insertRow(fileData.size, Row{s1, s2});
         fileData.size++;
     }
 

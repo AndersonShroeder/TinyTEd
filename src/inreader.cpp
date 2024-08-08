@@ -2,7 +2,7 @@
 #include <unistd.h>
 #include <array>
 #include <errmgr.hh>
-#include <keys.hh>
+#include <config.hh>
 
 int InputReader::readKey() {
     char c;
@@ -12,6 +12,7 @@ int InputReader::readKey() {
         if (r < 0 && errno != EAGAIN) {
             ErrorMgr::err("read");
         }
+        
     }
 
     if (c == '\x1b') {

@@ -2,51 +2,12 @@
 #include <version.hh>
 #include <sys/ioctl.h>
 #include <errmgr.hh>
-#include <alert.hh>
 #include <ctime>
 #include <unistd.h>
+#include <termacts.hh>
+#include <iostream>
 
 TerminalGUI::TerminalGUI(Config &cfg) : config(cfg) {};
-
-void TerminalGUI::wipeScreen() {
-    buf << "\x1b[2J";
-}
-
-void TerminalGUI::resetCursor() {
-    buf << "\x1b[H";
-}
-
-void TerminalGUI::hideCursor() {
-    buf << "\x1b[?25l";
-}
-
-void TerminalGUI::showCursor() {
-    buf << "\x1b[?25h";
-}
-
-int TerminalGUI::rowCxToRx(std::shared_ptr<Row> row) {
-    int rx = 0;
-    for (size_t j = 0; j < config.cx; j++) {
-        if (row->sRaw.at(j) == '\t')
-            rx += (TABSTOP - 1) - (rx % TABSTOP);
-        rx++;
-    }
-
-    return rx;
-}
-
-void TerminalGUI::scroll() {
-    config.rx = 0;
-    if (config.cy < config.fileData.size()) {
-        config.rx = rowCxToRx(config.fileData.at(config.cy));
-    }
-
-    if (config.cy < config.rOffset) config.rOffset = config.cy;
-    if (config.cy >= config.rOffset + config.sRow) config.rOffset = config.cy - config.sRow + 1;
-
-    if (config.rx < config.cOffset) config.cOffset = config.rx;
-    if (config.rx >= config.cOffset + config.sCol) config.cOffset = config.rx - config.sCol + 1;
-}
 
 void TerminalGUI::flushBuf() {
     std::string s = buf.str();
@@ -54,26 +15,27 @@ void TerminalGUI::flushBuf() {
     buf.str("");
 }
 
-void TerminalGUI::updateCursor() {
+void TerminalGUI::updateCursor(TTEdCursor &cursor) {
     std::stringstream ss;
-    ss << "\x1b[" << (config.cy - config.rOffset) + 1 << ";" << config.rx + 1 << "H";
+    ss << "\x1b[" << (cursor.cy - cursor.rOffset) + 1 << ";" << cursor.rx + 1 << "H";
     buf << ss.str();
 }
 
-void TerminalGUI::drawRows() {
-    for (size_t r = 0; r < config.sRow; r++) {
-        if (r + config.rOffset >= config.fileData.size()) {
+void TerminalGUI::drawRows(TTEdCursor &cursor, TTEdFileData fData, TTEdTermData tData) {
+    for (size_t r = 0; r < tData.sRow; r++) {
+        if (r + cursor.rOffset >= fData.size) {
             buf << "~\x1b[K\r\n";
         } else {
-            std::string::const_iterator start = config.fileData.at(r + config.rOffset)->sRender.cbegin();
-            std::string::const_iterator end = config.fileData.at(r + config.rOffset)->sRender.cend();
+            std::string::const_iterator start = fData.at(r + cursor.rOffset)->sRender.cbegin();
+            std::string::const_iterator end = fData.at(r + cursor.rOffset)->sRender.cend();
 
-            if (config.cOffset < config.fileData.at(r + config.rOffset)->sRender.size()) {
-                start += config.cOffset;
+            if (cursor.cOffset < fData.at(r + cursor.rOffset)->sRender.size()) {
+                start += cursor.cOffset;
             }
-            if (config.fileData.at(r + config.rOffset)->sRender.size() > (config.cOffset + config.sCol)) {
-                end = config.fileData.at(r + config.rOffset)->sRender.cbegin() + (config.cOffset + config.sCol);
+            if (fData.at(r + cursor.rOffset)->sRender.size() > (cursor.cOffset + tData.sCol)) {
+                end = fData.at(r + cursor.rOffset)->sRender.cbegin() + (cursor.cOffset + tData.sCol);
             }
+
             buf << std::string(start, end);
             buf << "\x1b[K";
             buf << "\r\n";
@@ -85,34 +47,34 @@ void TerminalGUI::drawStatusBar() {
     buf << "\x1b[7m";
     std::stringstream ss;
 
-    std::string leftStatus = config.filename + " - " + std::to_string(config.fileData.size()) + " lines";
+    std::string leftStatus = config.fileData.filename + " - " + std::to_string(config.fileData.size) + " lines";
     // {row}, {col} {modified?}
-    std::string rightStatus = std::to_string(config.cy + 1) + "," + std::to_string(config.cx + 1);
-    rightStatus += config.modified > 0 ? " M" : "";
+    std::string rightStatus = std::to_string(config.cursor.cy + 1) + "," + std::to_string(config.cursor.cx + 1);
+    rightStatus += config.fileData.modified > 0 ? " M" : "";
     ss << leftStatus;
 
-    while (ss.str().size() < config.sCol - rightStatus.size()) {
+    while (ss.str().size() < config.term.sCol - rightStatus.size()) {
         ss << " ";
     }
     ss << rightStatus;
 
-    buf << ss.str().substr(0, config.sCol);
+    buf << ss.str().substr(0, config.term.sCol);
     buf << "\x1b[m";
     buf << "\r\n";
 }
 
 void TerminalGUI::drawMessageBar() {
     buf << "\x1b[K";
-    int msgLen = std::min(config.statusMsg.size(), config.sCol);
-    if (msgLen && (std::time(nullptr) - config.statusTime) < 5) {
-        buf << config.statusMsg.substr(0, msgLen);
+    int msgLen = std::min(config.status.statusMsg.size(), config.term.sCol);
+    if (msgLen && (std::time(nullptr) - config.status.statusTime) < 5) {
+        buf << config.status.statusMsg.substr(0, msgLen);
     }
 }
 
 std::string TerminalGUI::centerText(Config& config, std::string s) {
-    if (s.size() > config.sCol) return s.substr(0, config.sCol);
+    if (s.size() > config.term.sCol) return s.substr(0, config.term.sCol);
     std::stringstream ss;
-    size_t lpadding = (config.sCol - s.size()) / 2;
+    size_t lpadding = (config.term.sCol - s.size()) / 2;
     while (lpadding--) ss << " ";
     ss << s;
     return ss.str();
@@ -142,22 +104,22 @@ void TerminalGUI::genCoverPage(Config& config, std::string &s) {
     v.push_back(centerText(config, "(Press any key to continue)\r\n"));
     v.push_back("\e[0m");
 
-    size_t verticalPadding = (config.sRow - v.size()) / 2;
+    size_t verticalPadding = (config.term.sRow - v.size()) / 2;
     for (size_t i = 0; i < verticalPadding + v.size(); i++) {
         s += i < verticalPadding ? "\n" : v.at(i - verticalPadding);
     }
 }
 
 void TerminalGUI::draw() {
-    hideCursor();
-    wipeScreen();
-    resetCursor();
-    scroll();
-    drawRows();
+    TermActions::hideCursor(buf);
+    TermActions::wipeScreen(buf);
+    TermActions::resetCursor(buf);
+    config.scroll();
+    drawRows(config.cursor, config.fileData, config.term);
     drawStatusBar();
     drawMessageBar();
-    updateCursor();
-    showCursor();
+    updateCursor(config.cursor);
+    TermActions::showCursor(buf);
     flushBuf();
 }
 
@@ -168,42 +130,8 @@ void TerminalGUI::splashScreen(Editor &e) {
     e.processKey();
 }
 
-int TerminalGUI::getWindowSize(Config& config) {
-    struct winsize ws;
-    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0) {
-        ErrorMgr::err("unable to retrieve window size");
-    } else {
-        config.sCol = ws.ws_col;
-        config.sRow = ws.ws_row - 2;
-        return 0;
-    }
-    return -1;
-}
-
-int TerminalGUI::getCursorPosition(Config& config) {
-    char buf[32];
-    unsigned int i = 0;
-
-    if (write(STDOUT_FILENO, "\x1b[6n", 4) != 4) return -1;
-
-    while (i < sizeof(buf) - 1) {
-        if (read(STDIN_FILENO, &buf[i], 1) != 1) break;
-        if (buf[i] == 'R') break;
-        i++;
-    }
-    buf[i] = '\0';
-
-    if (buf[0] != '\x1b' || buf[1] != '[') return -1;
-    if (sscanf(&buf[2], "%zu;%zu", &config.sRow, &config.sCol) != 2) return -1;
-    return 0;
-}
-
-void TerminalGUI::initGUI() {
-    if (getWindowSize(config) == -1) ErrorMgr::err("window size error");
-}
-
 void TerminalGUI::reset() {
-    wipeScreen();
-    resetCursor();
+    TermActions::wipeScreen(buf);
+    TermActions::resetCursor(buf);
     flushBuf();
 }

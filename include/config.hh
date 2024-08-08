@@ -1,19 +1,46 @@
 #pragma once
+
 #include <string>
 #include <vector>
 #include <memory>
 #include <termios.h>
 
 #define TABSTOP 4
+#define K_CTRL(k) ((k) & 0x1f)
+
+enum keys {
+    BACKSPACE = 127,
+    ARROW_LEFT = 1000,
+    ARROW_RIGHT,
+    ARROW_UP,
+    ARROW_DOWN,
+    DEL,
+    HOME,
+    END,
+    PAGE_UP,
+    PAGE_DOWN,
+};
+
+struct TTEdCursor;
+struct Row;
+struct TTEdStatus;
+struct TTEdTermData;
+struct TTEdFileDat;
+struct Config;
 
 struct TTEdCursor {
-    size_t rOffset;
-    size_t cOffset;
-    size_t cx;
-    size_t cy;
-    size_t rx;
+    size_t rOffset = 0;
+    size_t cOffset= 0;
+    size_t cx = 0;
+    size_t cy = 0;
+    size_t rx = 0;
 
     // Methods
+    /**
+     * @brief Converts the cursor position to the render position for the row.
+     * @param row The row to render to.
+     */
+    int rowCxToRx(std::shared_ptr<Row> row);
 };
 
 /**
@@ -38,7 +65,7 @@ struct TTEdStatus {
     time_t statusTime = 0;
 
     // Methods
-
+    void setStatusMsg(const std::string &msg);
 };
 
 struct TTEdTermData {
@@ -78,9 +105,14 @@ struct TTEdFileData {
 
     // Methods
     void insertRow(size_t pos, Row row = {"", ""});
-    void insertChar(TTEdCursor &cursor, char c);
+    std::shared_ptr<Row> at(size_t pos);
+
+    // These three functions could maybe be moved into the main config struct
+    void insertChar(TTEdCursor &cursor, char c); 
     void deleteChar(TTEdCursor &cursor);
     void insertNewLine(TTEdCursor &cursor);
+    
+
     std::stringstream streamify();
 };
 
@@ -107,4 +139,9 @@ struct Config {
     TTEdTermData term;
     TTEdFileData fileData;
     TTEdStatus status;
+
+    /**
+     * @brief Handles scrolling of the text and cursor.
+     */
+    void scroll();
 };

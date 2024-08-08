@@ -1,29 +1,27 @@
-#include <statmgr.hh>
 #include <termgui.hh>
 #include <editor.hh>
 #include <config.hh>
 #include <fileio.hh>
 #include <iostream>
-#include <alert.hh>
 
 int main(int argc, char *argv[]) {
     Config config;
-    StateMgr::enterRaw(config);
+    config.term.enterRaw();
+    config.term.getWindowSize();
+
     Editor editor(config);
     TerminalGUI terminalGUI(config);
-
-    terminalGUI.initGUI();
     // terminalGUI.splashScreen(editor);
     if (argc >= 2) {
         FileIO::openFile(config.fileData, argv[1]);
     }
-    else {
-        std::cout << "NEED A FILE LOL\r\n";
-        StateMgr::exitRaw(config);
-        exit(0);
-    }
+    // else {
+    //     std::cout << "NEED A FILE LOL\r\n";
+    //     config.term.exitRaw();
+    //     exit(0);
+    // }
 
-    Alert::setStatusMsg(config, "HELP: Ctrl-Q = quit");
+    config.status.setStatusMsg("HELP: Ctrl-Q = quit");
     
     while (true) {
         terminalGUI.draw();
@@ -33,7 +31,8 @@ int main(int argc, char *argv[]) {
     }
 
     terminalGUI.reset();
-    StateMgr::exitRaw(config);
+    config.term.exitRaw();
+
 
     return 0;
 }
