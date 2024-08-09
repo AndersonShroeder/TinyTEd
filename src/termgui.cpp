@@ -110,7 +110,7 @@ void TerminalGUI::genCoverPage(Config& config, std::string &s) {
     tmp += VERSION;
     tmp += "\r\n";
     v.push_back(centerText(config, tmp));
-    v.push_back(centerText(config, "(Press any key to continue)\r\n"));
+    v.push_back(centerText(config, "(Press any key to continue)"));
     v.push_back("\e[0m");
 
     size_t verticalPadding = (config.term.sRow - v.size()) / 2;
@@ -136,7 +136,7 @@ void TerminalGUI::splashScreen() {
     std::string s;
     genCoverPage(config, s);
     write(STDOUT_FILENO, s.c_str(), s.size());
-    InputHandler::processKey(config.cursor, config.fileData, config.term);
+    InputHandler::processKey(config.cursor, config.fileData, config.term, true);
 }
 
 void TerminalGUI::reset() {

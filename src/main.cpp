@@ -12,7 +12,7 @@ const std::map<char, std::string> commands = {
     {'h', "Lists launch options for TinyTEd"},
 };
 
-void processInput(Config &config, int argc, char *argv[]) {
+void processInput(TerminalGUI &gui, Config &config, int argc, char *argv[]) {
     const std::vector<std::string> args(argv + 1, argv + argc);
     for (std::string arg: args) {
         // CLI option
@@ -22,7 +22,7 @@ void processInput(Config &config, int argc, char *argv[]) {
             for (char c: chain) {
                 switch (c) {
                 case 'v':
-                    // terminalGUI.splashScreen(editor);
+                    gui.splashScreen();
                     break;
                 case 'h':
                     std::cout << "TinyTEd Help Page:\n";
@@ -47,10 +47,10 @@ void processInput(Config &config, int argc, char *argv[]) {
 int main(int argc, char *argv[]) {
     Config config;
     TerminalGUI terminalGUI(config);
-    processInput(config, argc, argv);
     config.term.enterRaw();
     config.term.getWindowSize();
 
+    processInput(terminalGUI, config, argc, argv);
     config.status.setStatusMsg("HELP: Ctrl-Q = quit");
     while (true) {
         terminalGUI.draw();
