@@ -174,7 +174,7 @@ void TTEdFileData::insertNewLine(TTEdCursor &cursor) {
     } else {
         std::shared_ptr<Row> rowToSplit = this->fileData.at(cursor.cy);
         Row newRow = rowToSplit->splitRow(cursor);
-        this->insertRow(cursor.cy, newRow);
+        this->insertRow(cursor.cy+1, newRow);
     }
 
     // Want cursor to "follow" the insertions
