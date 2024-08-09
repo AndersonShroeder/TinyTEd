@@ -50,6 +50,7 @@ int main(int argc, char *argv[]) {
     config.term.enterRaw();
     config.term.getWindowSize();
 
+    terminalGUI.reset();
     processInput(terminalGUI, config, argc, argv);
     config.status.setStatusMsg("HELP: Ctrl-Q = quit");
     while (true) {
