@@ -4,6 +4,7 @@
 #include <fileio.hh>
 #include <unistd.h>
 #include <inreader.hh>
+#include <cctype>
 
 void InputHandler::moveCursor(TTEdCursor &cursor, TTEdFileData &fData, int c) {
     std::shared_ptr<Row> data = cursor.cy >= fData.size() ? nullptr : fData.at(cursor.cy);
@@ -40,10 +41,31 @@ void InputHandler::moveCursor(TTEdCursor &cursor, TTEdFileData &fData, int c) {
     }
 }
 
+std::string InputHandler::promptUser(TerminalGUI &gui, TTEdStatus &stat, std::string msg) {
+    std::string userInput;
+    while (1) {
+        stat.setStatusMsg(msg + userInput);
+        gui.draw();
+
+        char c = InputReader::readKey();
+        if (c == DEL || c == K_CTRL('h') || c == BACKSPACE) {
+            if (userInput.size() > 0) userInput.pop_back();
+        } else if (c == '\x1b') { // Escape cancels input
+            stat.resetStatusMsg();
+            return std::string("");
+        } else if (c == '\r') {
+            stat.resetStatusMsg();
+            return userInput;
+        } else if (!std::iscntrl(c) && c < 128) { // check for ascii value
+            userInput += c;
+        }
+    }
+}
+
 int InputHandler::processKey(TTEdCursor &cursor, TTEdFileData &fData, TTEdTermData &term, bool breakAny) {
     static int quitStroke = 1;
     int c = InputReader::readKey();
-    if (breakAny) return 0;
+    if (breakAny) return procval::SUCCESS;
     switch (c) {
         // TODO: Newline
         case '\r':
@@ -55,14 +77,11 @@ int InputHandler::processKey(TTEdCursor &cursor, TTEdFileData &fData, TTEdTermDa
             //     quitStroke--;
             //     break;
             // }
-            return -1;
+            return procval::SHUTDOWN;
         }
 
         case K_CTRL('s'):
-            if (1 == FileIO::saveFile(fData)) {
-                // TODO: error Checking
-            }
-            break;
+            return procval::PROMPTSAVE;
 
         case PAGE_UP:
         case PAGE_DOWN: {
@@ -118,5 +137,5 @@ int InputHandler::processKey(TTEdCursor &cursor, TTEdFileData &fData, TTEdTermDa
     }
 
     quitStroke = 1;
-    return 0;
+    return procval::SUCCESS;
 }

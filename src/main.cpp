@@ -5,6 +5,7 @@
 #include <inhandler.hh>
 #include <vector>
 #include <map>
+#include <signal.h>
 
 const std::map<char, std::string> commands = {
     {'v', "Launches TinyTEd in verbose mode"},
@@ -53,8 +54,33 @@ int main(int argc, char *argv[]) {
     config.status.setStatusMsg("HELP: Ctrl-Q = quit");
     while (true) {
         terminalGUI.draw();
-        if (InputHandler::processKey(config.cursor, config.fileData, config.term) < 0) {
-            break;
+        switch (InputHandler::processKey(config.cursor, config.fileData, config.term)) {
+            case InputHandler::procval::FAILURE:
+                // ERROR DESCRIPOR HERE
+                terminalGUI.reset();
+                config.term.exitRaw();
+                return 0;
+            case InputHandler::procval::PROMPTSAVE:
+                if (config.fileData.filename == "") {
+                    std::string s = InputHandler::promptUser(terminalGUI, config.status, "Save as: ");
+                    
+                    // Check if saving was canceled
+                    if (s == "") {
+                        config.status.setStatusMsg("Save aborted");
+                        break;
+                    } else {
+                        config.fileData.filename = s;
+                        FileIO::saveFile(config.fileData);
+                        config.status.setStatusMsg("File saved");
+                    }
+                }
+                break;
+            case InputHandler::procval::SHUTDOWN:
+                terminalGUI.reset();
+                config.term.exitRaw();
+                return 0;
+            default:
+                break;
         }
     }
 

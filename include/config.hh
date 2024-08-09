@@ -66,6 +66,7 @@ struct TTEdStatus {
 
     // Methods
     void setStatusMsg(const std::string &msg);
+    void resetStatusMsg();
 };
 
 struct TTEdTermData {

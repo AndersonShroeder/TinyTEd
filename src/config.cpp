@@ -65,6 +65,11 @@ void TTEdStatus::setStatusMsg(const std::string &msg) {
     this->statusTime = std::time(nullptr);
 }
 
+void TTEdStatus::resetStatusMsg() {
+    this->statusMsg = "";
+    this->statusTime = std::time(nullptr);
+}
+
 ///////////////////
 // TERMDATA METHODS
 ///////////////////
