@@ -25,10 +25,12 @@ void processInput(TerminalGUI &gui, Config &config, int argc, char *argv[]) {
                     gui.splashScreen();
                     break;
                 case 'h':
-                    std::cout << "TinyTEd Help Page:\n";
+                    std::cout << "TinyTEd Help Page:\r\n";
                     for (std::pair<char, std::string> p: commands) {
-                        std::cout << '\t' << p.first << " - " << p.second << '\n'; 
+                        std::cout << '\t' << p.first << " - " << p.second << "\r\n"; 
                     }
+                    gui.reset();
+                    config.term.exitRaw();
                     exit(0);
                 default:
                     std::cout << "Unknown argument: " << c << std::endl;
@@ -74,6 +76,10 @@ int main(int argc, char *argv[]) {
                         FileIO::saveFile(config.fileData);
                         config.status.setStatusMsg("File saved");
                     }
+                }
+                else {
+                    FileIO::saveFile(config.fileData);
+                    config.status.setStatusMsg("File saved");
                 }
                 break;
             case InputHandler::procval::SHUTDOWN:
