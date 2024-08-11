@@ -49,7 +49,7 @@ std::string InputHandler::promptUser(TerminalGUI &gui, Config &cfg, std::string 
         cfg.status.setStatusMsg(msg + userInput);
         gui.draw();
 
-        char c = InputReader::readKey();
+        int c = InputReader::readKey();
         if (c == DEL || c == K_CTRL('h') || c == BACKSPACE) {
             if (userInput.size() > 0) userInput.pop_back();
         } else if (c == '\x1b') { // Escape cancels input
