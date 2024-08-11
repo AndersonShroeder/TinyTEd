@@ -5,6 +5,8 @@
 #include <unistd.h>
 #include <inreader.hh>
 #include <cctype>
+#include <optional>
+#include <commands.hh>
 
 void InputHandler::moveCursor(TTEdCursor &cursor, TTEdFileData &fData, int c) {
     std::shared_ptr<Row> data = cursor.cy >= fData.size() ? nullptr : fData.at(cursor.cy);
@@ -41,24 +43,32 @@ void InputHandler::moveCursor(TTEdCursor &cursor, TTEdFileData &fData, int c) {
     }
 }
 
-std::string InputHandler::promptUser(TerminalGUI &gui, TTEdStatus &stat, std::string msg) {
+std::string InputHandler::promptUser(TerminalGUI &gui, Config &cfg, std::string msg, std::optional<TTEdCommand> cmd) {
     std::string userInput;
     while (1) {
-        stat.setStatusMsg(msg + userInput);
+        cfg.status.setStatusMsg(msg + userInput);
         gui.draw();
 
         char c = InputReader::readKey();
         if (c == DEL || c == K_CTRL('h') || c == BACKSPACE) {
             if (userInput.size() > 0) userInput.pop_back();
         } else if (c == '\x1b') { // Escape cancels input
-            stat.resetStatusMsg();
+            cfg.status.resetStatusMsg();
+
+            if (cmd.has_value()) cmd.value()(cfg, userInput, c);
+
             return std::string("");
         } else if (c == '\r') {
-            stat.resetStatusMsg();
+            cfg.status.resetStatusMsg();
+
+            if (cmd.has_value()) cmd.value()(cfg, userInput, c);
+
             return userInput;
         } else if (!std::iscntrl(c) && c < 128) { // check for ascii value
             userInput += c;
         }
+
+        if (cmd.has_value()) cmd.value()(cfg, userInput, c);
     }
 }
 

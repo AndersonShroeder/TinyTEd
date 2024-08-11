@@ -7,6 +7,9 @@
 int InputReader::readKey() {
     char c;
     int r;
+    fd_set readfds;
+    FD_ZERO(&readfds);
+    FD_SET(STDIN_FILENO, &readfds);
 
     while ((r = read(STDIN_FILENO, &c, sizeof(c))) != 1) {
         if (r < 0 && errno != EAGAIN) {
@@ -14,11 +17,20 @@ int InputReader::readKey() {
         }
         
     }
+    
+    struct timeval timeout;
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 5000; // Timeout in microseconds
 
     if (c == '\x1b') {
         std::array<char, 3> buf;
+
+        if (select(STDIN_FILENO + 1, &readfds, nullptr, nullptr, &timeout) <= 0) return c;
         if (read(STDIN_FILENO, &buf[0], 1) != 1) return c;
+        
+        if (select(STDIN_FILENO + 1, &readfds, nullptr, nullptr, &timeout) <= 0) return c;
         if (read(STDIN_FILENO, &buf[1], 1) != 1) return c;
+
         
         if (buf[0] == '[') {
             if (buf[1] >= '0' && buf[1] <= '9') {

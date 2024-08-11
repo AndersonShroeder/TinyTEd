@@ -2,6 +2,8 @@
 
 #include <config.hh>
 #include <termgui.hh>
+#include <optional>
+#include <functional>
 
 /**
  * @class Editor
@@ -24,7 +26,7 @@ namespace InputHandler {
      */
     void moveCursor(TTEdCursor &cursor, TTEdFileData &fData, int c);
 
-    std::string promptUser(TerminalGUI &gui, TTEdStatus &stat, std::string msg);
+    std::string promptUser(TerminalGUI &gui, Config &cfg, std::string msg, std::optional<TTEdCommand> cmd);
 
     /**
      * @brief Processes a key input and performs the associated action.

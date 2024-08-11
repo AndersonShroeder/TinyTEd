@@ -6,6 +6,7 @@
 #include <vector>
 #include <map>
 #include <signal.h>
+#include <commands.hh>
 
 const std::map<char, std::string> commands = {
     {'v', "Launches TinyTEd in verbose mode"},
@@ -65,7 +66,7 @@ int main(int argc, char *argv[]) {
                 return 0;
             case InputHandler::procval::PROMPTSAVE:
                 if (config.fileData.filename == "") {
-                    std::string s = InputHandler::promptUser(terminalGUI, config.status, "Save as: ");
+                    std::string s = InputHandler::promptUser(terminalGUI, config, "Save as: ", std::nullopt);
                     
                     // Check if saving was canceled
                     if (s == "") {
@@ -82,27 +83,9 @@ int main(int argc, char *argv[]) {
                     config.status.setStatusMsg("File saved");
                 }
                 break;
-            case InputHandler::procval::PROMPTSEARCH: {
-                std::string s = InputHandler::promptUser(terminalGUI, config.status, "Search: ");
-                if (s == "") {
-                    break;
-                }
-
-                // Begin search
-                for (size_t i = 0; i < config.fileData.size(); i++) {
-                    std::shared_ptr<Row> row = config.fileData.at(i);
-
-                    size_t match = row->sRender.find(s);
-                    if (match != std::string::npos) {
-                        config.cursor.cy = i;
-                        config.cursor.cx = match;
-                        config.cursor.rOffset = config.term.sRow;
-                        break;
-                    }
-                }
-
+            case InputHandler::procval::PROMPTSEARCH:
+                Commands::Search::run(terminalGUI, config);
                 break;
-            }    
             case InputHandler::procval::SHUTDOWN:
                 terminalGUI.reset();
                 config.term.exitRaw();

@@ -4,6 +4,7 @@
 #include <vector>
 #include <memory>
 #include <termios.h>
+#include <functional>
 
 #define TABSTOP 4
 #define K_CTRL(k) ((k) & 0x1f)
@@ -27,6 +28,8 @@ struct TTEdStatus;
 struct TTEdTermData;
 struct TTEdFileData;
 struct Config;
+
+using TTEdCommand = std::function<void(Config &, std::string, int)>;
 
 struct TTEdCursor {
     size_t rOffset = 0;
