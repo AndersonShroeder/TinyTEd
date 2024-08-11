@@ -27,31 +27,45 @@ private:
 
     /**
      * @brief Updates the cursor position on the screen.
+     * 
+     * @param cursor The cursor object containing the current cursor position.
      */
-    void updateCursor(TTEdCursor &cursor);
+    void updateCursor(const TTEdCursor &cursor);
 
     /**
      * @brief Draws the rows of text on the screen.
+     * 
+     * @param cursor The cursor object containing the current cursor position.
+     * @param fData The file data containing the text to be displayed.
+     * @param tData The terminal data containing display parameters.
      */
-    void drawRows(TTEdCursor &cursor, TTEdFileData fData, TTEdTermData tData);
+    void drawRows(const TTEdCursor &cursor, const TTEdFileData &fData, const TTEdTermData &tData);
 
     /**
      * @brief Draws the status bar at the bottom of the screen.
+     * 
+     * @param cursor The cursor object containing the current cursor position.
+     * @param fData The file data containing the text to be displayed.
+     * @param tData The terminal data containing display parameters.
      */
-    void drawStatusBar(TTEdCursor &cursor, TTEdFileData &fData, TTEdTermData &tData);
+    void drawStatusBar(const TTEdCursor &cursor, const TTEdFileData &fData, const TTEdTermData &tData);
 
     /**
      * @brief Draws the message bar at the bottom of the screen.
+     * 
+     * @param tData The terminal data containing display parameters.
+     * @param status The status object containing the message to be displayed.
      */
-    void drawMessageBar(TTEdTermData tData, TTEdStatus status);
+    void drawMessageBar(const TTEdTermData &tData, const TTEdStatus &status);
 
     /**
      * @brief Centers the given text within the current screen width.
      * 
+     * @param config The configuration object.
      * @param text The text to be centered.
      * @return The centered text.
      */
-    static std::string centerText(Config& config, std::string s);
+    static std::string centerText(const Config &config, const std::string &text);
 
     /**
      * @brief Generates the cover page text for the splash screen.
@@ -59,7 +73,7 @@ private:
      * @param config The configuration object.
      * @param s The string to store the generated cover page text.
      */
-    static void genCoverPage(Config& config, std::string &s);
+    static void genCoverPage(const Config &config, std::string &s);
 
 public:
     /**
@@ -67,7 +81,7 @@ public:
      * 
      * @param cfg The configuration object to initialize the terminal GUI.
      */
-    TerminalGUI(Config& cfg);
+    TerminalGUI(Config &cfg);
 
     /**
      * @brief Draws the entire terminal interface including text, status bar, and message bar.
@@ -76,8 +90,6 @@ public:
 
     /**
      * @brief Displays the splash screen and waits for user input.
-     * 
-     * @param e The editor instance used to process user input.
      */
     void splashScreen();
 

@@ -15,23 +15,22 @@ int InputReader::readKey() {
         if (r < 0 && errno != EAGAIN) {
             ErrorMgr::err("read");
         }
-        
     }
-    
+
     struct timeval timeout;
     timeout.tv_sec = 0;
     timeout.tv_usec = 5000; // Timeout in microseconds
 
-    if (c == '\x1b') {
+    if (c == '\x1b') { // Escape sequence
         std::array<char, 3> buf;
 
+        // Read the next characters to determine the sequence
         if (select(STDIN_FILENO + 1, &readfds, nullptr, nullptr, &timeout) <= 0) return c;
         if (read(STDIN_FILENO, &buf[0], 1) != 1) return c;
-        
+
         if (select(STDIN_FILENO + 1, &readfds, nullptr, nullptr, &timeout) <= 0) return c;
         if (read(STDIN_FILENO, &buf[1], 1) != 1) return c;
 
-        
         if (buf[0] == '[') {
             if (buf[1] >= '0' && buf[1] <= '9') {
                 if (read(STDIN_FILENO, &buf[2], 1) != 1) return c;
@@ -44,9 +43,9 @@ int InputReader::readKey() {
                         case '6': return PAGE_DOWN;
                         case '7': return HOME;
                         case '8': return END;
+                        default: return '\x1b'; // Unknown sequence
                     }
                 }
-
             } else {
                 switch (buf[1]) {
                     case 'A': return ARROW_UP;
@@ -55,15 +54,17 @@ int InputReader::readKey() {
                     case 'D': return ARROW_LEFT;
                     case 'H': return HOME;
                     case 'F': return END;
+                    default: return '\x1b'; // Unknown sequence
                 }
             }
         } else if (buf[0] == 'O') {
-            switch(buf[1]) {
+            switch (buf[1]) {
                 case 'H': return HOME;
                 case 'F': return END;
+                default: return '\x1b'; // Unknown sequence
             }
         }
-        return '\x1b';
+        return '\x1b'; // Unknown escape sequence
     }
     return c;
 }

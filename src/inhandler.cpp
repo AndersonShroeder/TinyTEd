@@ -11,12 +11,12 @@
 void InputHandler::moveCursor(TTEdCursor &cursor, TTEdFileData &fData, int c) {
     std::shared_ptr<Row> data = cursor.cy >= fData.size() ? nullptr : fData.at(cursor.cy);
     
-    switch(c) {
+    switch (c) {
         case ARROW_UP:
             if (cursor.cy > 0) cursor.cy--;
             break;
         case ARROW_LEFT:
-            if (cursor.cx != 0) {
+            if (cursor.cx > 0) {
                 cursor.cx--;
             } else if (cursor.cy > 0) {
                 cursor.cy--;
@@ -36,6 +36,7 @@ void InputHandler::moveCursor(TTEdCursor &cursor, TTEdFileData &fData, int c) {
             break;
     }
 
+    // Ensure cursor does not exceed the bounds of the current row
     data = cursor.cy >= fData.size() ? nullptr : fData.at(cursor.cy);
     size_t newlen = data ? data->sRaw.size() : 0;
     if (cursor.cx > newlen) {
@@ -43,53 +44,49 @@ void InputHandler::moveCursor(TTEdCursor &cursor, TTEdFileData &fData, int c) {
     }
 }
 
-std::string InputHandler::promptUser(TerminalGUI &gui, Config &cfg, std::string msg, std::optional<TTEdCommand> cmd) {
+std::string InputHandler::promptUser(TerminalGUI &gui, Config &cfg, const std::string& msg, std::optional<TTEdCommand> cmd) {
     std::string userInput;
-    while (1) {
+    while (true) {
         cfg.status.setStatusMsg(msg + userInput);
         gui.draw();
 
         int c = InputReader::readKey();
         if (c == DEL || c == K_CTRL('h') || c == BACKSPACE) {
-            if (userInput.size() > 0) userInput.pop_back();
-        } else if (c == '\x1b') { // Escape cancels input
+            if (!userInput.empty()) userInput.pop_back();
+        } else if (c == '\x1b' || c == K_CTRL('q')) { // Escape cancels input
             cfg.status.resetStatusMsg();
-
-            if (cmd.has_value()) cmd.value()(cfg, userInput, c);
-
-            return std::string("");
-        } else if (c == '\r') {
+            if (cmd) cmd.value()(cfg, userInput, c);
+            return "";
+        } else if (c == '\r') { // Enter submits input
             cfg.status.resetStatusMsg();
-
-            if (cmd.has_value()) cmd.value()(cfg, userInput, c);
-
+            if (cmd) cmd.value()(cfg, userInput, c);
             return userInput;
-        } else if (!std::iscntrl(c) && c < 128) { // check for ascii value
-            userInput += c;
+        } else if (!std::iscntrl(c) && c < 128) { // Accept ASCII printable characters
+            userInput += static_cast<char>(c);
         }
 
-        if (cmd.has_value()) cmd.value()(cfg, userInput, c);
+        if (cmd) cmd.value()(cfg, userInput, c);
     }
 }
 
-int InputHandler::processKey(TTEdCursor &cursor, TTEdFileData &fData, TTEdTermData &term, bool breakAny) {
+int InputHandler::processKey(TTEdCursor &cursor, TTEdFileData &fData, TTEdTermData &term, TTEdStatus &stat, bool breakAny) {
     static int quitStroke = 1;
     int c = InputReader::readKey();
+
     if (breakAny) return procval::SUCCESS;
+
     switch (c) {
-        // TODO: Newline
-        case '\r':
+        case '\r': // Newline
             fData.insertNewLine(cursor);
             break;
         case K_CTRL('q'): {
-            // if (modified && quitStroke > 0) {
-            //     Alert::setStatusMsg(this->config, "UNSAVED CHANGES | Press quit again to discard changes");
-            //     quitStroke--;
-            //     break;
-            // }
+            if (fData.modified && quitStroke > 0) {
+                stat.setStatusMsg("UNSAVED CHANGES | Press quit again to discard changes");
+                quitStroke--;
+                break;
+            }
             return procval::SHUTDOWN;
         }
-
         case K_CTRL('s'):
             return procval::PROMPTSAVE;
         
@@ -113,7 +110,6 @@ int InputHandler::processKey(TTEdCursor &cursor, TTEdFileData &fData, TTEdTermDa
             }
             break;
         }
-
         case HOME:
             cursor.cx = 0;
             break;
@@ -122,33 +118,29 @@ int InputHandler::processKey(TTEdCursor &cursor, TTEdFileData &fData, TTEdTermDa
                 cursor.cx = fData.at(cursor.cy)->sRaw.size();
             }
             break;
-
-        // TODO: implement
         case BACKSPACE:
         case K_CTRL('h'):
         case DEL:
-            if (c == DEL) moveCursor(cursor, fData, ARROW_RIGHT); // delete character to the right of cursor currently
+            if (c == DEL) moveCursor(cursor, fData, ARROW_RIGHT); // Move cursor to the right for DEL
             fData.deleteChar(cursor);
             break;
-
         case ARROW_UP:
         case ARROW_LEFT:
         case ARROW_DOWN:
         case ARROW_RIGHT:
             moveCursor(cursor, fData, c);
             break;
-
-        // Ignore for now
         case K_CTRL('l'):
         case '\x1b':
+            // No action needed for these keys
             break;
-
         default:
-            // handle other keys
-            fData.insertChar(cursor, c);
+            // Handle other keys by inserting them
+            if (c >= 0 && c < 128) {
+                fData.insertChar(cursor, static_cast<char>(c));
+            }
             break;
     }
 
-    quitStroke = 1;
     return procval::SUCCESS;
 }
