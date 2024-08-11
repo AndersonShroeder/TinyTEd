@@ -25,7 +25,7 @@ struct TTEdCursor;
 struct Row;
 struct TTEdStatus;
 struct TTEdTermData;
-struct TTEdFileDat;
+struct TTEdFileData;
 struct Config;
 
 struct TTEdCursor {

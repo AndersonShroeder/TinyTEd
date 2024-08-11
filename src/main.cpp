@@ -82,6 +82,27 @@ int main(int argc, char *argv[]) {
                     config.status.setStatusMsg("File saved");
                 }
                 break;
+            case InputHandler::procval::PROMPTSEARCH: {
+                std::string s = InputHandler::promptUser(terminalGUI, config.status, "Search: ");
+                if (s == "") {
+                    break;
+                }
+
+                // Begin search
+                for (size_t i = 0; i < config.fileData.size(); i++) {
+                    std::shared_ptr<Row> row = config.fileData.at(i);
+
+                    size_t match = row->sRender.find(s);
+                    if (match != std::string::npos) {
+                        config.cursor.cy = i;
+                        config.cursor.cx = match;
+                        config.cursor.rOffset = config.term.sRow;
+                        break;
+                    }
+                }
+
+                break;
+            }    
             case InputHandler::procval::SHUTDOWN:
                 terminalGUI.reset();
                 config.term.exitRaw();

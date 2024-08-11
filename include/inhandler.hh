@@ -13,7 +13,8 @@ namespace InputHandler {
         FAILURE = -1,
         SUCCESS = 0,
         PROMPTSAVE = 1,
-        SHUTDOWN = 2,
+        PROMPTSEARCH,
+        SHUTDOWN,
     };
 
     /**
