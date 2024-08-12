@@ -2,7 +2,8 @@
 
 #include <sstream>
 
-namespace TermActions {
+namespace TermActions
+{
     /**
      * @brief Clears the screen.
      */

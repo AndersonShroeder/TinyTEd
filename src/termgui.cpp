@@ -12,34 +12,43 @@
 
 TerminalGUI::TerminalGUI(Config &cfg) : config(cfg) {}
 
-void TerminalGUI::flushBuf() {
+void TerminalGUI::flushBuf()
+{
     std::string s = buf.str();
     write(STDOUT_FILENO, s.c_str(), s.size());
     buf.str("");
 }
 
-void TerminalGUI::updateCursor(const TTEdCursor &cursor) {
+void TerminalGUI::updateCursor(const TTEdCursor &cursor)
+{
     buf << "\x1b[" << (cursor.cy - cursor.rOffset) + 1 << ";" << cursor.rx + CURSOR_X_SHIFT << "H";
 }
 
-void TerminalGUI::drawRows(const TTEdCursor &cursor, const TTEdFileData &fData, const TTEdTermData &tData) {
-    for (size_t r = 0; r < tData.sRow; ++r) {
+void TerminalGUI::drawRows(const TTEdCursor &cursor, const TTEdFileData &fData, const TTEdTermData &tData)
+{
+    for (size_t r = 0; r < tData.sRow; ++r)
+    {
         size_t rowLoc = r + cursor.rOffset;
 
-        if (rowLoc >= fData.size()) {
+        if (rowLoc >= fData.size())
+        {
             buf << "~\x1b[K\r\n";
-        } else {
+        }
+        else
+        {
             auto row = fData.at(rowLoc);
 
             auto start = row->sRender.cbegin();
             auto end = row->sRender.cend();
 
-            if (cursor.cOffset < row->size()) {
+            if (cursor.cOffset < row->size())
+            {
                 start += cursor.cOffset;
             }
 
             size_t shift = cursor.cOffset + tData.sCol;
-            if (row->sRender.size() > shift) {
+            if (row->sRender.size() > shift)
+            {
                 end = start + shift;
             }
 
@@ -48,12 +57,14 @@ void TerminalGUI::drawRows(const TTEdCursor &cursor, const TTEdFileData &fData, 
     }
 }
 
-void TerminalGUI::drawStatusBar(const TTEdCursor &cursor, const TTEdFileData &fData, const TTEdTermData &tData) {
+void TerminalGUI::drawStatusBar(const TTEdCursor &cursor, const TTEdFileData &fData, const TTEdTermData &tData)
+{
     buf << "\x1b[7m";
 
     std::string leftStatus = fData.filename + " - " + std::to_string(fData.size()) + " lines";
     std::string rightStatus = std::to_string(cursor.cy + 1) + "," + std::to_string(cursor.cx + 1);
-    if (fData.modified > 0) {
+    if (fData.modified > 0)
+    {
         rightStatus += " M";
     }
 
@@ -63,21 +74,26 @@ void TerminalGUI::drawStatusBar(const TTEdCursor &cursor, const TTEdFileData &fD
     buf << "\x1b[m\r\n";
 }
 
-void TerminalGUI::drawMessageBar(const TTEdTermData &tData, const TTEdStatus &status) {
+void TerminalGUI::drawMessageBar(const TTEdTermData &tData, const TTEdStatus &status)
+{
     buf << "\x1b[K";
     int msgLen = std::min(status.statusMsg.size(), tData.sCol);
-    if (msgLen && (std::time(nullptr) - status.statusTime) < 5) {
+    if (msgLen && (std::time(nullptr) - status.statusTime) < 5)
+    {
         buf << status.statusMsg.substr(0, msgLen);
     }
 }
 
-std::string TerminalGUI::centerText(const Config &config, const std::string &s) {
-    if (s.size() > config.term.sCol) return s.substr(0, config.term.sCol);
+std::string TerminalGUI::centerText(const Config &config, const std::string &s)
+{
+    if (s.size() > config.term.sCol)
+        return s.substr(0, config.term.sCol);
     std::string spaces((config.term.sCol - s.size()) / 2, ' ');
     return spaces + s;
 }
 
-void TerminalGUI::genCoverPage(const Config& config, std::string &s) {
+void TerminalGUI::genCoverPage(const Config &config, std::string &s)
+{
     std::vector<std::string> v;
     v.push_back("\033[1;36m");
     v.push_back(centerText(config, "   ___                       ___           ___           ___           ___           ___     \r\n"));
@@ -102,12 +118,14 @@ void TerminalGUI::genCoverPage(const Config& config, std::string &s) {
     v.push_back("\e[0m");
 
     size_t verticalPadding = (config.term.sRow - v.size()) / 2;
-    for (size_t i = 0; i < verticalPadding + v.size(); i++) {
+    for (size_t i = 0; i < verticalPadding + v.size(); i++)
+    {
         s += i < verticalPadding ? "\n" : v.at(i - verticalPadding);
     }
 }
 
-void TerminalGUI::draw() {
+void TerminalGUI::draw()
+{
     TermActions::hideCursor(buf);
     TermActions::wipeScreen(buf);
     TermActions::resetCursor(buf);
@@ -120,14 +138,16 @@ void TerminalGUI::draw() {
     flushBuf();
 }
 
-void TerminalGUI::splashScreen() {
+void TerminalGUI::splashScreen()
+{
     std::string s;
     genCoverPage(config, s);
     write(STDOUT_FILENO, s.c_str(), s.size());
     InputHandler::processKey(config.cursor, config.fileData, config.term, config.status, true);
 }
 
-void TerminalGUI::reset() {
+void TerminalGUI::reset()
+{
     TermActions::wipeScreen(buf);
     TermActions::resetCursor(buf);
     flushBuf();
