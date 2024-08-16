@@ -23,7 +23,7 @@ namespace Commands
          * @param s The search query string.
          * @param c The current match index or other relevant integer data.
          */
-        void callback(Config &cfg, std::string s, int c);
+        void callback(Config &cfg, std::string_view s, int c);
 
         /**
          * @brief Runs the search command, triggering the search process and updating the GUI.

@@ -74,7 +74,7 @@ private:
      * @param config The configuration object.
      * @param s The string to store the generated cover page text.
      */
-    static void genCoverPage(const Config &config, std::string &s);
+    static void genCoverPage(const Config &config, std::stringstream &s);
 
 public:
     /**

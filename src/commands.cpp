@@ -1,7 +1,7 @@
 #include <commands.hh>
 #include <inhandler.hh>
 
-void Commands::Search::callback(Config &cfg, std::string s, int c)
+void Commands::Search::callback(Config &cfg, std::string_view s, int c)
 {
     // Track the index of the previous match and the direction of movement
     static int matchPrev = -1;
@@ -65,7 +65,7 @@ void Commands::Search::run(TerminalGUI &gui, Config &cfg)
     size_t prevROffset = cfg.cursor.rOffset;
 
     // Prompt user for search input
-    std::string s = InputHandler::promptUser(gui, cfg, "Search: ", Commands::Search::callback);
+    std::string_view s = InputHandler::promptUser(gui, cfg, "Search: ", Commands::Search::callback);
 
     // Reset cursor position if no search term was provided
     if (s.empty())

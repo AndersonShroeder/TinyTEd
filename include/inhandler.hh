@@ -39,7 +39,7 @@ namespace InputHandler
      * @param cmd An optional command to execute based on the user response.
      * @return The user input as a string.
      */
-    std::string promptUser(TerminalGUI &gui, Config &cfg, const std::string &msg, std::optional<TTEdCommand> cmd);
+    std::string_view promptUser(TerminalGUI &gui, Config &cfg, const std::string &msg, std::optional<TTEdCommand> cmd);
 
     /**
      * @brief Processes a key input and performs the associated action.

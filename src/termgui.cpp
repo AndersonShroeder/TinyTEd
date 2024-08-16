@@ -92,7 +92,7 @@ std::string TerminalGUI::centerText(const Config &config, const std::string &s)
     return spaces + s;
 }
 
-void TerminalGUI::genCoverPage(const Config &config, std::string &s)
+void TerminalGUI::genCoverPage(const Config &config, std::stringstream &s)
 {
     std::vector<std::string> v;
     v.push_back("\033[1;36m");
@@ -120,7 +120,7 @@ void TerminalGUI::genCoverPage(const Config &config, std::string &s)
     size_t verticalPadding = (config.term.sRow - v.size()) / 2;
     for (size_t i = 0; i < verticalPadding + v.size(); i++)
     {
-        s += i < verticalPadding ? "\n" : v.at(i - verticalPadding);
+        s << (i < verticalPadding ? "\n" : v.at(i - verticalPadding));
     }
 }
 
@@ -140,9 +140,8 @@ void TerminalGUI::draw()
 
 void TerminalGUI::splashScreen()
 {
-    std::string s;
-    genCoverPage(config, s);
-    write(STDOUT_FILENO, s.c_str(), s.size());
+    genCoverPage(config, buf);
+    flushBuf();
     InputHandler::processKey(config.cursor, config.fileData, config.term, config.status, true);
 }
 
