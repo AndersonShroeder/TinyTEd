@@ -27,6 +27,7 @@ enum textState
 {
     TS_NORMAL = 0,
     TS_NUMBER,
+    TS_SEARCH
 };
 
 struct TTEdCursor;

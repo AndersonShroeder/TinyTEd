@@ -7,6 +7,14 @@ void Commands::Search::callback(Config &cfg, std::string_view s, int c)
     static int matchPrev = -1;
     static int matchDir = 1;
 
+    static int matchLineIdx = -1;
+    static std::array<textState, UCHAR_MAX> matchLine;
+    if (matchLineIdx != -1) {
+        auto row = cfg.fileData.at(matchLineIdx);
+        std::copy(matchLine.begin(), matchLine.end(), row->textStates.begin());
+        matchLineIdx = -1;
+    }
+
     // Handle input commands
     if (c == '\r' || c == '\x1b')
     {                   // Enter or Escape key
@@ -51,6 +59,11 @@ void Commands::Search::callback(Config &cfg, std::string_view s, int c)
             cfg.cursor.cy = current;
             cfg.cursor.cx = match + s.size();
             cfg.cursor.rOffset = cfg.term.sRow; // Adjust row offset
+
+            matchLineIdx = current;
+            std::copy(row->textStates.begin(), row->textStates.end(), matchLine.begin());
+            std::fill(row->textStates.begin() + match, row->textStates.begin() + match + s.size(), TS_SEARCH);
+
             break;
         }
     }
