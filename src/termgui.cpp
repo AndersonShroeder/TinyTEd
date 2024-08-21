@@ -53,15 +53,23 @@ void TerminalGUI::drawRows(const TTEdCursor &cursor, const TTEdFileData &fData, 
             }
 
             buf << "~ ";
+            int current_color = -1;
             for (size_t i = 0; i < row->size(); i++) {
                 textState state = row->textStates.at(i);
                 if (state == TS_NORMAL) {
-                    buf << "\x1b[39m";
+                    if (current_color != -1) {
+                        buf << "\x1b[39m";
+                        current_color = -1;
+                    }   
                     buf << row->sRender.at(i);
                 }
                 else {
                     int color = this->stateToColor.at(state);
-                    buf << "\x1b[" << std::to_string(color) << "m";
+                    if (current_color != color) {
+                        current_color = color;
+                        buf << "\x1b[" << std::to_string(color) << "m";
+                    }
+                    buf << row->sRender.at(i);
                 }
             }
             buf << "\x1b[39m\x1b[K\r\n";
