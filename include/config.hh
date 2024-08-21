@@ -117,6 +117,8 @@ struct Row
 
 
     void updateRender();
+
+    bool isSeparator(int c);
 };
 
 /**

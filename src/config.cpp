@@ -9,6 +9,8 @@
 // ROW METHODS
 ///////////////////
 
+int32_t test = 1024.123;
+
 void Row::insertChar(TTEdCursor &cursor, char c)
 {
     // Insert character at the cursor position or end of the row
@@ -46,11 +48,23 @@ Row Row::splitRow(TTEdCursor &cursor)
 
 void Row::parseStates() {
     std::fill(this->textStates.begin(), this->textStates.end(), TS_NORMAL);
-    for (size_t i = 0; i < this->size(); i++) {
+
+    bool separator = true;
+
+    size_t i = 0;
+    while (i < this->size()) {
         char c = this->sRender.at(i);
-        if (isdigit(c)) {
+        textState prev = (i > 0) ? this->textStates.at(i-1) : TS_NORMAL;
+
+        if (isdigit(c) && (separator || prev == TS_NUMBER) || (c == '.' && prev == TS_NUMBER)) {
             this->textStates[i] = TS_NUMBER;
+            i++;
+            separator = 0;
+            continue;
         }
+
+        separator = this->isSeparator(c);
+        i++;
     }
 }
 
@@ -61,6 +75,10 @@ void Row::updateRender() {
     this->sRender = std::regex_replace(this->sRaw, std::regex("\t"), spaceStr);
 
     this->parseStates();
+}
+
+bool Row::isSeparator(int c) {
+    return isspace(c) || c == '\0' || strchr(",.()+-/*=~&<>[];", c) != NULL;
 }
 
 ///////////////////
