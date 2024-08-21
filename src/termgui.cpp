@@ -52,7 +52,19 @@ void TerminalGUI::drawRows(const TTEdCursor &cursor, const TTEdFileData &fData, 
                 end = start + shift;
             }
 
-            buf << "~ " << std::string(start, end) << "\x1b[K\r\n";
+            buf << "~ ";
+            for (size_t i = 0; i < row->size(); i++) {
+                textState state = row->textStates.at(i);
+                if (state == TS_NORMAL) {
+                    buf << "\x1b[39m";
+                    buf << row->sRender.at(i);
+                }
+                else {
+                    int color = this->stateToColor.at(state);
+                    buf << "\x1b[" << std::to_string(color) << "m";
+                }
+            }
+            buf << "\x1b[39m\x1b[K\r\n";
         }
     }
 }

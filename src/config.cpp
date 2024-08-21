@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <ctime>
+#include <regex>
 
 ///////////////////
 // ROW METHODS
@@ -41,6 +42,25 @@ Row Row::splitRow(TTEdCursor &cursor)
     this->sRender = this->sRaw; // Update rendered string
 
     return newRow;
+}
+
+void Row::parseStates() {
+    std::fill(this->textStates.begin(), this->textStates.end(), TS_NORMAL);
+    for (size_t i = 0; i < this->size(); i++) {
+        char c = this->sRender.at(i);
+        if (isdigit(c)) {
+            this->textStates[i] = TS_NUMBER;
+        }
+    }
+}
+
+void Row::updateRender() {
+    std::string spaceStr(TABSTOP, ' '); // String of spaces to replace tabs
+    
+    // Replace tabs with spaces and store both raw and rendered versions of the line
+    this->sRender = std::regex_replace(this->sRaw, std::regex("\t"), spaceStr);
+
+    this->parseStates();
 }
 
 ///////////////////

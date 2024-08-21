@@ -23,6 +23,12 @@ enum keys
     PAGE_DOWN,
 };
 
+enum textState
+{
+    TS_NORMAL = 0,
+    TS_NUMBER,
+};
+
 struct TTEdCursor;
 struct Row;
 struct TTEdStatus;
@@ -65,11 +71,13 @@ struct TTEdCursor
  *
  * @param sRaw Raw representation of file row data.
  * @param sRender Parsed representation accounting for tabs.
+ * @param textState Render state for ith element
  */
 struct Row
 {
     std::string sRaw;
     std::string sRender;
+    std::array<textState, UCHAR_MAX> textStates;
 
     /**
      * @brief Inserts a character at the current cursor position.
@@ -100,6 +108,14 @@ struct Row
      * @return A new Row object representing the split part.
      */
     Row splitRow(TTEdCursor &cursor);
+
+    /**
+     * @brief Parses the state of each character in the row
+    */
+    void parseStates();
+
+
+    void updateRender();
 };
 
 /**

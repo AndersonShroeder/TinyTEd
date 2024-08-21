@@ -3,6 +3,7 @@
 #include <string>
 #include <config.hh>
 #include <sstream>
+#include <map>
 
 /**
  * @class TerminalGUI
@@ -77,6 +78,11 @@ private:
     static void genCoverPage(const Config &config, std::stringstream &s);
 
 public:
+    std::map<textState, int> stateToColor = {
+        {TS_NORMAL, 37},
+        {TS_NUMBER, 31}
+    };
+
     /**
      * @brief Constructs a TerminalGUI instance.
      *
