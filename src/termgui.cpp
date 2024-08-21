@@ -77,18 +77,20 @@ void TerminalGUI::drawRows(const TTEdCursor &cursor, const TTEdFileData &fData, 
     }
 }
 
-void TerminalGUI::drawStatusBar(const TTEdCursor &cursor, const TTEdFileData &fData, const TTEdTermData &tData)
+void TerminalGUI::drawStatusBar(const Config &cfg)
 {
     buf << "\x1b[7m";
 
-    std::string leftStatus = fData.filename + " - " + std::to_string(fData.size()) + " lines";
-    std::string rightStatus = std::to_string(cursor.cy + 1) + "," + std::to_string(cursor.cx + 1);
-    if (fData.modified > 0)
+    std::string leftStatus = cfg.fileData.filename + " - " + std::to_string(cfg.fileData.size()) + " lines";
+
+    std::string fileType = (cfg.syntax != NULL ) ? cfg.syntax->filetype : "";
+    std::string rightStatus = fileType + std::to_string(cfg.cursor.cy + 1) + "," + std::to_string(cfg.cursor.cx + 1);
+    if (cfg.fileData.modified > 0)
     {
         rightStatus += " M";
     }
 
-    std::string spaces(tData.sCol - rightStatus.size() - leftStatus.size(), ' ');
+    std::string spaces(cfg.term.sCol - rightStatus.size() - leftStatus.size(), ' ');
 
     buf << leftStatus << spaces << rightStatus;
     buf << "\x1b[m\r\n";
@@ -151,7 +153,7 @@ void TerminalGUI::draw()
     TermActions::resetCursor(buf);
     config.scroll();
     drawRows(config.cursor, config.fileData, config.term);
-    drawStatusBar(config.cursor, config.fileData, config.term);
+    drawStatusBar(config);
     drawMessageBar(config.term, config.status);
     updateCursor(config.cursor);
     TermActions::showCursor(buf);

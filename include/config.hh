@@ -5,6 +5,7 @@
 #include <memory>
 #include <termios.h>
 #include <functional>
+#include <syntaxparser.hh>
 
 #define TABSTOP 4
 #define K_CTRL(k) ((k) & 0x1f)
@@ -264,6 +265,7 @@ struct Config
     TTEdTermData term;
     TTEdFileData fileData;
     TTEdStatus status;
+    SyntaxHL *syntax = NULL;
 
     /**
      * @brief Handles scrolling of the text and cursor.

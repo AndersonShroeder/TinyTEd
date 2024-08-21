@@ -50,7 +50,7 @@ private:
      * @param fData The file data containing the text to be displayed.
      * @param tData The terminal data containing display parameters.
      */
-    void drawStatusBar(const TTEdCursor &cursor, const TTEdFileData &fData, const TTEdTermData &tData);
+    void drawStatusBar(const Config &cfg);
 
     /**
      * @brief Draws the message bar at the bottom of the screen.

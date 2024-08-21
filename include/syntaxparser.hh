@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-struct syntaxHL {
+struct SyntaxHL {
     std::string filetype;
     std::string comment;
     std::vector<std::string> keywords;
@@ -11,6 +11,12 @@ struct syntaxHL {
     std::vector<std::string> extensions;
 };
 
-static const std::vector<syntaxHL> hlSchemes = {
-
+static const std::vector<SyntaxHL> hlSchemes = {
+  {
+    "C++",
+    "//",
+    {},
+    {},
+    {"C", "cc", "cpp", "CPP", "c++", "cp", "cxx"}
+  }
 };

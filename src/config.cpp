@@ -18,6 +18,7 @@ void Row::insertChar(TTEdCursor &cursor, char c)
 
     this->sRaw.insert(insertColNum, 1, c);
     this->sRender = this->sRaw; // Update rendered string
+    this->updateRender();
 }
 
 void Row::deleteChar(TTEdCursor &cursor)
@@ -27,6 +28,7 @@ void Row::deleteChar(TTEdCursor &cursor)
 
     this->sRaw.erase(delColNum, 1);
     this->sRender = this->sRaw; // Update rendered string
+    this->updateRender();
 }
 
 size_t Row::size() const
@@ -42,12 +44,15 @@ Row Row::splitRow(TTEdCursor &cursor)
 
     this->sRaw = this->sRaw.substr(0, cursor.cx);
     this->sRender = this->sRaw; // Update rendered string
-
+    
+    this->updateRender();
+    newRow.updateRender();
+    
     return newRow;
 }
 
 void Row::parseStates() {
-    std::fill(this->textStates.begin(), this->textStates.end(), TS_NORMAL);
+    std::fill(this->textStates.begin(), this->textStates.end(), TS_NORMAL);  
 
     bool separator = true;
 
