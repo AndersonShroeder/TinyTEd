@@ -58,6 +58,7 @@ void TerminalGUI::drawRows(const TTEdCursor &cursor, const TTEdFileData &fData, 
                 textState state = row->textStates.at(i);
                 if (state == TS_NORMAL) {
                     if (current_color != -1) {
+                        buf << "\x1b[m";
                         buf << "\x1b[39m";
                         current_color = -1;
                     }   

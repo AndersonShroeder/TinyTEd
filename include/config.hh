@@ -81,6 +81,8 @@ struct Row
     std::string sRender;
     std::array<textState, UCHAR_MAX> textStates;
 
+    Row(std::string s);
+
     /**
      * @brief Inserts a character at the current cursor position.
      *
@@ -203,7 +205,7 @@ struct TTEdFileData
      * @param pos The position to insert the row.
      * @param row The row to insert (default is an empty row).
      */
-    void insertRow(size_t pos, Row row = {"", ""});
+    void insertRow(size_t pos, Row r = {""});
 
     /**
      * @brief Gets the number of rows in the file.

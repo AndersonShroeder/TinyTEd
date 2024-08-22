@@ -20,7 +20,7 @@ int FileIO::openFile(TTEdFileData &fileData, const std::string &path)
     std::string line;
     while (std::getline(ifs, line))
     {
-        auto r = std::make_shared<Row>(Row{line, line});
+        auto r = std::make_shared<Row>(Row{line});
         r->updateRender();
 
         fileData.fileData.emplace_back(r);

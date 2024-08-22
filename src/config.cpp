@@ -11,6 +11,15 @@
 
 int32_t test = 1024.123;
 
+Row::Row(std::string s) {
+  // Update row string data
+  this->sRaw = s;
+  this->updateRender();
+
+  // Fill values in textStates array
+  std::fill(this->textStates.begin(), this->textStates.end(), TS_NORMAL);  
+}
+
 void Row::insertChar(TTEdCursor &cursor, char c)
 {
     // Insert character at the cursor position or end of the row
@@ -40,7 +49,7 @@ Row Row::splitRow(TTEdCursor &cursor)
 {
     // Split the row at the cursor position and create a new row with the split part
     std::string sub = this->sRaw.substr(cursor.cx);
-    Row newRow{sub, sub};
+    Row newRow{sub};
 
     this->sRaw = this->sRaw.substr(0, cursor.cx);
     this->sRender = this->sRaw; // Update rendered string
