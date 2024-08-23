@@ -11,6 +11,8 @@
 
 int32_t test = 1024.123;
 
+SyntaxHL *Config::syntax = NULL;
+
 Row::Row(std::string s) {
   // Update row string data
   this->sRaw = s;
@@ -63,18 +65,58 @@ Row Row::splitRow(TTEdCursor &cursor)
 void Row::parseStates() {
     std::fill(this->textStates.begin(), this->textStates.end(), TS_NORMAL);  
 
+    if (Config::syntax == NULL) {
+      return;
+    }
+
     bool separator = true;
+    int in_string = 0;
 
     size_t i = 0;
     while (i < this->size()) {
         char c = this->sRender.at(i);
         textState prev = (i > 0) ? this->textStates.at(i-1) : TS_NORMAL;
 
-        if (isdigit(c) && (separator || prev == TS_NUMBER) || (c == '.' && prev == TS_NUMBER)) {
-            this->textStates[i] = TS_NUMBER;
+        // Parse single line comments if not currently in string and syntax supports it
+        size_t commentSize = Config::syntax->comment.size(); 
+        if (( commentSize <= this->size() - i) && (!in_string)) {
+          if (this->sRender.substr(i, commentSize) == Config::syntax->comment) {
+            std::fill(this->textStates.begin() + i, this->textStates.end(), TS_COMMENT);
+            break;
+          }          
+        }
+
+        // Parse Strings if string flag active
+        if (Config::syntax->flags & HFLAG_STR) {
+          if (in_string) {
+            this->textStates[i] = TS_STRING;
+            if (c == '\\' && i + 1 < this->size()) {
+              this->textStates[i + 1] = TS_STRING;
+              i += 2;
+              continue;
+            }
+            if (c == in_string) {
+              in_string = 0;
+            }
             i++;
-            separator = 0;
+            prev = TS_NORMAL;
             continue;
+          } else if (c == '"' || c == '\'') {
+            in_string = c;
+            this->textStates[i] = TS_STRING;
+            i++;
+            continue;
+          }
+        }
+
+        // Parse Numbers if number flag is active for syntax struct
+        if (Config::syntax->flags & HFLAG_NUM) {
+          if (isdigit(c) && (separator || prev == TS_NUMBER) || (c == '.' && prev == TS_NUMBER)) {
+              this->textStates[i] = TS_NUMBER;
+              i++;
+              separator = 0;
+              continue;
+          }
         }
 
         separator = this->isSeparator(c);

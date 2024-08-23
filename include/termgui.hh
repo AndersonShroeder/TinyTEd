@@ -80,7 +80,9 @@ private:
 public:
     std::map<textState, int> stateToColor = {
         {TS_NORMAL, 37},
+        {TS_COMMENT, 36},
         {TS_NUMBER, 31},
+        {TS_STRING, 32},
         {TS_SEARCH, 7}
     };
 

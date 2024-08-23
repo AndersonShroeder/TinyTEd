@@ -9,6 +9,8 @@
 
 #define TABSTOP 4
 #define K_CTRL(k) ((k) & 0x1f)
+#define HFLAG_NUM 1 << 0
+#define HFLAG_STR 1 << 1
 
 enum keys
 {
@@ -27,11 +29,14 @@ enum keys
 enum textState
 {
     TS_NORMAL = 0,
+    TS_COMMENT,
     TS_NUMBER,
+    TS_STRING,
     TS_SEARCH
 };
 
 struct SyntaxHL {
+    int flags;
     std::string filetype;
     std::string comment;
     std::vector<std::string> keywords;
@@ -49,6 +54,7 @@ using TTEdCommand = std::function<void(Config &, std::string, int)>;
 
 static std::vector<SyntaxHL> hlSchemes = {
   {
+    HFLAG_NUM | HFLAG_STR,
     "C++",
     "//",
     {},
@@ -286,10 +292,11 @@ struct Config
     TTEdTermData term;
     TTEdFileData fileData;
     TTEdStatus status;
-    SyntaxHL *syntax = NULL;
+    static SyntaxHL *syntax;
 
     /**
      * @brief Handles scrolling of the text and cursor.
      */
     void scroll();
-};
+}; 
+
