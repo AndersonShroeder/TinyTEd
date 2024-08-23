@@ -55,7 +55,7 @@ void processInput(TerminalGUI &gui, Config &config, int argc, char *argv[])
         else
         {
             // Assume argument is a filename
-            if (!FileIO::openFile(config.fileData, arg))
+            if (!FileIO::openFile(config, arg))
             {
                 std::cerr << "Failed to open file: " << arg << std::endl;
                 exit(1);
@@ -89,20 +89,20 @@ int main(int argc, char *argv[])
 
         case InputHandler::procval::PROMPTSAVE:
         {
-            std::string filename;
-            if (config.fileData.filename.empty())
+            std::string path;
+            if (config.fileData.path.empty())
             {
-                filename = InputHandler::promptUser(terminalGUI, config, "Save as: ", std::nullopt);
+                path = InputHandler::promptUser(terminalGUI, config, "Save as: ", std::nullopt);
 
                 // Check if saving was canceled
-                if (filename.empty())
+                if (path.empty())
                 {
                     config.status.setStatusMsg("Save aborted");
                 }
                 else
                 {
-                    config.fileData.filename = filename;
-                    if (FileIO::saveFile(config.fileData))
+                    config.fileData.path = path;
+                    if (FileIO::saveFile(config))
                     {
                         config.status.setStatusMsg("File saved");
                     }
@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
             }
             else
             {
-                if (FileIO::saveFile(config.fileData))
+                if (FileIO::saveFile(config))
                 {
                     config.status.setStatusMsg("File saved");
                 }

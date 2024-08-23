@@ -55,7 +55,7 @@ void InputHandler::moveCursor(TTEdCursor &cursor, TTEdFileData &fData, int c)
     }
 }
 
-std::string_view InputHandler::promptUser(TerminalGUI &gui, Config &cfg, const std::string &msg, std::optional<TTEdCommand> cmd)
+std::string InputHandler::promptUser(TerminalGUI &gui, Config &cfg, const std::string &msg, std::optional<TTEdCommand> cmd)
 {
     std::string userInput;
     while (true)

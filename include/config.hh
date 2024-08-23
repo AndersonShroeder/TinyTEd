@@ -5,7 +5,7 @@
 #include <memory>
 #include <termios.h>
 #include <functional>
-#include <syntaxparser.hh>
+#include <filesystem>
 
 #define TABSTOP 4
 #define K_CTRL(k) ((k) & 0x1f)
@@ -31,6 +31,13 @@ enum textState
     TS_SEARCH
 };
 
+struct SyntaxHL {
+    std::string filetype;
+    std::string comment;
+    std::vector<std::string> keywords;
+    std::vector<std::string> types;
+    std::vector<std::string> extensions;
+};
 struct TTEdCursor;
 struct Row;
 struct TTEdStatus;
@@ -39,6 +46,16 @@ struct TTEdFileData;
 struct Config;
 
 using TTEdCommand = std::function<void(Config &, std::string, int)>;
+
+static std::vector<SyntaxHL> hlSchemes = {
+  {
+    "C++",
+    "//",
+    {},
+    {},
+    {".C", ".cc", ".cpp", ".CPP", ".c++", ".cp", ".cxx"},
+  },
+};
 
 /**
  * @struct TTEdCursor
@@ -195,7 +212,9 @@ struct TTEdTermData
  */
 struct TTEdFileData
 {
+    std::filesystem::path path;
     std::string filename;
+    std::string extension;
     std::vector<std::shared_ptr<Row>> fileData;
     int modified = 0;
 
