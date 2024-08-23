@@ -99,7 +99,7 @@ void Row::parseStates() {
               in_string = 0;
             }
             i++;
-            prev = TS_NORMAL;
+            separator = 1;
             continue;
           } else if (c == '"' || c == '\'') {
             in_string = c;
@@ -117,6 +117,31 @@ void Row::parseStates() {
               separator = 0;
               continue;
           }
+        }
+
+        
+        if (separator) {
+            // Parse Keywords
+            for (std::string &s: Config::syntax->keywords) {
+                size_t kwSize = s.size();
+                if (kwSize <= this->size() - i) {
+                    if (this->sRender.substr(i, kwSize) == s) {
+                        std::fill(this->textStates.begin() + i, this->textStates.begin() + i + kwSize, TS_KW1);
+                        break;
+                    }
+                }
+            }
+
+            // Parse Types
+            for (std::string &s: Config::syntax->types) {
+                size_t typeSize = s.size();
+                if (typeSize <= this->size() - i) {
+                    if (this->sRender.substr(i, typeSize) == s) {
+                        std::fill(this->textStates.begin() + i, this->textStates.begin() + i + typeSize, TS_TYPE);
+                        break;
+                    }
+                }
+            }
         }
 
         separator = this->isSeparator(c);
