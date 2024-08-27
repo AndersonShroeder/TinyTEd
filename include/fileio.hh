@@ -3,6 +3,8 @@
 #include <config.hh>
 #include <string>
 
+void parseFileExtension(Config &cfg);
+
 /**
  * @class FileIO
  * @brief Provides functionality for file input/output operations.

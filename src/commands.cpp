@@ -7,6 +7,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <fstream>
+#include <fileio.hh>
 
 void Commands::Search::callback(Config &cfg, std::string_view s, int c)
 {
@@ -148,11 +149,12 @@ void Commands::LaunchServer::run(TerminalGUI &gui, Config &cfg)
     
     cfg.status.setStatusMsg("Connection Established, transfering file data");
 
-    // Send file extension
-    uint32_t length = cfg.fileData.extension.size();
+    // Send path
+    size_t length =  cfg.fileData.path.string().size();
     send(new_socket, &length, sizeof(length), 0);
-    send(new_socket, cfg.fileData.extension.c_str(), cfg.fileData.extension.size(), 0);
+    send(new_socket, cfg.fileData.path.string().c_str(), length, 0);
 
+    // Send buffer data
     std::string line;
     for (auto line: cfg.fileData.fileData)
     {
@@ -202,23 +204,19 @@ void Commands::ConnectServer::run(TerminalGUI &gui, Config &cfg)
     // std::cout << "Connected to the server. Enter a message: ";
     cfg.status.setStatusMsg("Connected to TinyTed server");
 
-    // Receive the server's response
+
+    size_t length;
+
+    // Recv file path for name/extension
+    recv(sock, &length, sizeof(length), 0);
+    std::vector<char> buffer(length);
+    recv(sock, buffer.data(), length, 0);
+    cfg.fileData.path = std::string(buffer.begin(), buffer.end());
+
+    parseFileExtension(cfg);
+
     size_t valread;
     std::vector<std::shared_ptr<Row>> fileData;
-
-    // Read file extension
-    uint32_t extensionSize;
-    valread = read(sock, &extensionSize, sizeof(extensionSize));
-    if (valread <= 0) {
-        return;
-    }
-
-    char buf[extensionSize + 1];
-    memset(buf, '\0', extensionSize + 1);
-    valread = read(sock, buf, extensionSize);
-
-    std::string line(buf);
-    cfg.fileData.extension = line;
 
     while (true) {
 
@@ -247,6 +245,6 @@ void Commands::ConnectServer::run(TerminalGUI &gui, Config &cfg)
     close(sock);
     // cfg.fileData.fileData.clear
     cfg.fileData.fileData = fileData;
-    cfg.status.setStatusMsg("File data transfer success");
+    cfg.status.setStatusMsg("File data transfer success, now editing: " + cfg.fileData.path.string());
 
 }
