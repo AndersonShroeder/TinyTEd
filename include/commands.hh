@@ -33,4 +33,16 @@ namespace Commands
          */
         void run(TerminalGUI &gui, Config &cfg);
     }
+
+    namespace LaunchServer
+    {
+        void run(TerminalGUI &gui, Config &cfg);
+        
+    }
+
+    namespace ConnectServer
+    {
+        void run(TerminalGUI &gui, Config &cfg);
+
+    }
 };

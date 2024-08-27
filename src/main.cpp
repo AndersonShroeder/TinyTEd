@@ -130,6 +130,13 @@ int main(int argc, char *argv[])
             Commands::Search::run(terminalGUI, config);
             break;
 
+        case InputHandler::procval::PROMPTSERVER:
+            Commands::LaunchServer::run(terminalGUI, config);
+            break;
+        case InputHandler::procval::PROMPTCONNECT:
+            Commands::ConnectServer::run(terminalGUI, config);
+            break;
+
         case InputHandler::procval::SHUTDOWN:
             goto exit;
             break;

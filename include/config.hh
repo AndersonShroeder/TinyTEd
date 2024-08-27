@@ -45,6 +45,7 @@ struct SyntaxHL {
     std::vector<std::string> types;
     std::vector<std::string> extensions;
 };
+
 struct TTEdCursor;
 struct Row;
 struct TTEdStatus;

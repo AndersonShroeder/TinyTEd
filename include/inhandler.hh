@@ -18,6 +18,8 @@ namespace InputHandler
         SUCCESS = 0,    ///< Indicates successful processing of the key.
         PROMPTSAVE = 1, ///< Indicates a prompt to save the current file.
         PROMPTSEARCH,   ///< Indicates a prompt to start a search.
+        PROMPTSERVER,
+        PROMPTCONNECT,
         SHUTDOWN,       ///< Indicates a request to shut down the editor.
     };
 

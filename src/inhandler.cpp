@@ -122,6 +122,11 @@ int InputHandler::processKey(TTEdCursor &cursor, TTEdFileData &fData, TTEdTermDa
     case K_CTRL('f'):
         return procval::PROMPTSEARCH;
 
+    case K_CTRL('n'):
+        return procval::PROMPTSERVER;
+    case K_CTRL('b'):
+        return procval::PROMPTCONNECT;
+
     case PAGE_UP:
     case PAGE_DOWN:
     {
