@@ -100,7 +100,6 @@ void Commands::Search::run(TerminalGUI &gui, Config &cfg)
 
 void Commands::LaunchServer::run(TerminalGUI &gui, Config &cfg)
 {
-    const int PORT = 8080;
     int server_fd, new_socket;
     struct sockaddr_in address;
     int opt = 1;
@@ -112,16 +111,15 @@ void Commands::LaunchServer::run(TerminalGUI &gui, Config &cfg)
         exit(EXIT_FAILURE);
     }
     
-    // Forcefully attaching socket to the port 8080
-    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
-        perror("setsockopt failed");
-        close(server_fd);
-        exit(EXIT_FAILURE);
+   
+    std::string connectionPort = InputHandler::promptUser(gui, cfg, "INADDR_ANY <Port>: ", std::nullopt);
+    if (connectionPort.empty()) {
+      connectionPort = "8080";
     }
-    
+
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(PORT);
+    address.sin_port = htons(std::stoi(connectionPort));
     
     // Bind the socket to the network address and port
     if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
@@ -137,7 +135,7 @@ void Commands::LaunchServer::run(TerminalGUI &gui, Config &cfg)
         exit(EXIT_FAILURE);
     }
     
-    cfg.status.setStatusMsg("TinyTed server launched on port: " + std::to_string(PORT));
+    cfg.status.setStatusMsg("TinyTed server launched on port: " + connectionPort);
     gui.draw();
     
     // Accept an incoming connection
@@ -176,7 +174,6 @@ void Commands::LaunchServer::run(TerminalGUI &gui, Config &cfg)
 
 void Commands::ConnectServer::run(TerminalGUI &gui, Config &cfg)
 {
-    const int PORT = 8080;
     int sock = 0;
     struct sockaddr_in serv_addr;
     std::string message;
@@ -186,11 +183,24 @@ void Commands::ConnectServer::run(TerminalGUI &gui, Config &cfg)
         std::cerr << "Socket creation error" << std::endl;
     }
 
+    // Get Connection input
+    std::string connectionIP = InputHandler::promptUser(gui, cfg, "<IP>: ", std::nullopt);
+    if (connectionIP.empty()) {
+      connectionIP = "127.0.0.1";
+    }
+
+    std::string connectionPort = InputHandler::promptUser(gui, cfg, connectionIP + " <Port>: ", std::nullopt);
+    if (connectionPort.empty()) {
+      connectionPort = "8080";
+    }
+
+    int port = std::stoi(connectionPort);
+
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(PORT);
+    serv_addr.sin_port = htons(port);
 
     // Convert IPv4 and IPv6 addresses from text to binary form
-    if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
+    if (inet_pton(AF_INET, connectionIP.c_str(), &serv_addr.sin_addr) <= 0) {
         cfg.status.setStatusMsg("Invalid address/ Address not supported");
         return;
     }
