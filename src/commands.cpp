@@ -102,7 +102,6 @@ void Commands::LaunchServer::run(TerminalGUI &gui, Config &cfg)
 {
     int server_fd, new_socket;
     struct sockaddr_in address;
-    int opt = 1;
     int addrlen = sizeof(address);
     
     // Creating socket file descriptor
@@ -139,18 +138,21 @@ void Commands::LaunchServer::run(TerminalGUI &gui, Config &cfg)
     gui.draw();
     
     // Accept an incoming connection
-    if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
+    if ((cfg.conn.sockfd = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
         perror("Accept failed");
         close(server_fd);
         exit(EXIT_FAILURE);
     }
-    
+
+    cfg.conn.connected = true;
+
     cfg.status.setStatusMsg("Connection Established, transfering file data");
+    // gui.draw();
 
     // Send path
     size_t length =  cfg.fileData.path.string().size();
-    send(new_socket, &length, sizeof(length), 0);
-    send(new_socket, cfg.fileData.path.string().c_str(), length, 0);
+    send(cfg.conn.sockfd, &length, sizeof(length), 0);
+    send(cfg.conn.sockfd, cfg.fileData.path.string().c_str(), length, 0);
 
     // Send buffer data
     std::string line;
@@ -158,17 +160,19 @@ void Commands::LaunchServer::run(TerminalGUI &gui, Config &cfg)
     {
         uint32_t size = line->size();
         // send size
-        send(new_socket, &size, sizeof(size), 0);
+        send(cfg.conn.sockfd, &size, sizeof(size), 0);
 
         // read ack
 
         // send data
-        send(new_socket, line->sRaw.c_str(), line->size(), 0);
+        send(cfg.conn.sockfd, line->sRaw.c_str(), line->size(), 0);
 
         // read ack
     }
 
-    close(new_socket);
+    // fin
+    send(cfg.conn.sockfd, 0, 0, 0);
+
     close(server_fd);
 }
 
@@ -234,7 +238,7 @@ void Commands::ConnectServer::run(TerminalGUI &gui, Config &cfg)
         uint32_t size;
         valread = read(sock, &size, sizeof(size));
 
-        if (valread <= 0) {
+        if (valread <= 0 || size <= 0) {
             break;
         }
         // read data
@@ -251,8 +255,10 @@ void Commands::ConnectServer::run(TerminalGUI &gui, Config &cfg)
         fileData.emplace_back(r);
     }
 
+    cfg.conn.connected = true;
+
     // Close the socket
-    close(sock);
+    // close(sock);
     // cfg.fileData.fileData.clear
     cfg.fileData.fileData = fileData;
     cfg.status.setStatusMsg("File data transfer success, now editing: " + cfg.fileData.path.string());

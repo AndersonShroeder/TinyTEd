@@ -78,7 +78,16 @@ int main(int argc, char *argv[])
 
     while (true)
     {
+        // draw
         terminalGUI.draw();
+        
+        // Process Server Connections
+        if (config.conn.connected)
+        {
+            
+        }
+
+        // Process Input
         switch (InputHandler::processKey(config.cursor, config.fileData, config.term, config.status))
         {
         case InputHandler::procval::FAILURE:
@@ -147,6 +156,10 @@ int main(int argc, char *argv[])
     }
 
 exit:
+    if (config.conn.connected)
+    {
+        close(config.conn.sockfd);
+    }
     terminalGUI.reset();
     config.term.exitRaw();
     return 0;

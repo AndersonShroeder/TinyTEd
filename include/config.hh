@@ -6,6 +6,8 @@
 #include <termios.h>
 #include <functional>
 #include <filesystem>
+#include <arpa/inet.h>
+#include <unistd.h>
 
 #define TABSTOP 4
 #define K_CTRL(k) ((k) & 0x1f)
@@ -51,6 +53,7 @@ struct Row;
 struct TTEdStatus;
 struct TTEdTermData;
 struct TTEdFileData;
+struct TTEdConnection;
 struct Config;
 
 using TTEdCommand = std::function<void(Config &, std::string, int)>;
@@ -290,6 +293,17 @@ struct TTEdFileData
     std::stringstream streamify();
 };
 
+struct TTEdConnection 
+{
+    struct sockaddr_in address;
+    std::string ip;
+    fd_set readfds;
+    timeval timeout{0, 1000};
+
+    int sockfd;
+    bool connected;
+};
+
 /**
  * @struct Config
  * @brief Configuration and state information for the editor.
@@ -305,6 +319,7 @@ struct Config
     TTEdTermData term;
     TTEdFileData fileData;
     TTEdStatus status;
+    TTEdConnection conn;
     static SyntaxHL *syntax;
 
     /**
