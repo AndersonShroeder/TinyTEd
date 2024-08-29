@@ -171,7 +171,7 @@ void Commands::LaunchServer::run(TerminalGUI &gui, Config &cfg)
     }
 
     // fin
-    send(cfg.conn.sockfd, 0, 0, 0);
+    send(cfg.conn.sockfd, 0, -1, 0);
 
     close(server_fd);
 }
@@ -238,7 +238,7 @@ void Commands::ConnectServer::run(TerminalGUI &gui, Config &cfg)
         uint32_t size;
         valread = read(sock, &size, sizeof(size));
 
-        if (valread <= 0 || size <= 0) {
+        if (valread <= 0 || size < 0) {
             break;
         }
         // read data
