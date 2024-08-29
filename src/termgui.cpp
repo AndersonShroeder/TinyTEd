@@ -85,7 +85,8 @@ void TerminalGUI::drawStatusBar(const Config &cfg)
     std::string leftStatus = cfg.fileData.filename + " - " + std::to_string(cfg.fileData.size()) + " lines";
 
     std::string fileType = (cfg.syntax != NULL ) ? cfg.syntax->filetype : "?";
-    std::string rightStatus = fileType + " " + std::to_string(cfg.cursor.cy + 1) + "," + std::to_string(cfg.cursor.cx + 1);
+    std::string connectionStatus = (cfg.conn.connected) ? cfg.conn.host ? "(host)" : "(remote)" : "";
+    std::string rightStatus = connectionStatus + " | " + fileType + " | " + std::to_string(cfg.cursor.cy + 1) + "," + std::to_string(cfg.cursor.cx + 1);
     if (cfg.fileData.modified > 0)
     {
         rightStatus += " M";

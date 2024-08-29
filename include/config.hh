@@ -301,6 +301,7 @@ struct TTEdConnection
     timeval timeout{0, 1000};
 
     int sockfd;
+    bool host;
     bool connected;
 };
 
@@ -326,5 +327,44 @@ struct Config
      * @brief Handles scrolling of the text and cursor.
      */
     void scroll();
+
+    // Receive data from the socket
+    std::string recv() {
+        if (!conn.connected) {
+            status.setStatusMsg("No connection established.");
+            return "";
+        }
+
+        char buffer[1024] = {0}; // Buffer for receiving data
+        ssize_t bytesRead = ::recv(conn.sockfd, buffer, sizeof(buffer) - 1, 0);
+
+        if (bytesRead < 0) {
+            return "";
+        } else if (bytesRead == 0) {
+            status.setStatusMsg("Connection closed by peer.");
+            conn.connected = false;
+            return "";
+        }
+
+        // Return the received data as a string
+        return std::string(buffer, bytesRead);
+    }
+
+    // // Send data to the socket
+    // bool send(const std::string& data) {
+    //     if (!connected) {
+    //         std::cerr << "Error: No connection established." << std::endl;
+    //         return false;
+    //     }
+
+    //     ssize_t bytesSent = ::send(sockfd, data.c_str(), data.size(), 0);
+
+    //     if (bytesSent < 0) {
+    //         std::cerr << "Error sending data: " << strerror(errno) << std::endl;
+    //         return false;
+    //     }
+
+    //     return true;
+    // }
 }; 
 

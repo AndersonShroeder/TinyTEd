@@ -144,6 +144,7 @@ void Commands::LaunchServer::run(TerminalGUI &gui, Config &cfg)
         exit(EXIT_FAILURE);
     }
 
+    cfg.conn.host = true;
     cfg.conn.connected = true;
 
     cfg.status.setStatusMsg("Connection Established, transfering file data");
@@ -172,7 +173,7 @@ void Commands::LaunchServer::run(TerminalGUI &gui, Config &cfg)
 
     // fin
     int fin = -1;
-    send(cfg.conn.sockfd, &fin, 0, 0);
+    send(cfg.conn.sockfd, &fin, sizeof(fin), 0);
 
     close(server_fd);
 }
@@ -239,7 +240,7 @@ void Commands::ConnectServer::run(TerminalGUI &gui, Config &cfg)
         uint32_t size;
         valread = read(sock, &size, sizeof(size));
 
-        if (valread <= 0 || (int)size < 0) {
+        if (valread <= 0 || size == -1) {
             break;
         }
         // read data

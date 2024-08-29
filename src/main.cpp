@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
         // Process Server Connections
         if (config.conn.connected)
         {
-            
+            std::string data = config.recv();
         }
 
         // Process Input
@@ -158,8 +158,10 @@ int main(int argc, char *argv[])
 exit:
     if (config.conn.connected)
     {
+        config.conn.connected = false;
         close(config.conn.sockfd);
     }
+
     terminalGUI.reset();
     config.term.exitRaw();
     return 0;
