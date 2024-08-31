@@ -4,6 +4,7 @@
 #include <sys/ioctl.h>
 #include <ctime>
 #include <regex>
+#include <fcntl.h>
 
 ///////////////////
 // ROW METHODS

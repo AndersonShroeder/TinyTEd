@@ -78,6 +78,10 @@ int main(int argc, char *argv[])
     processInput(terminalGUI, config, argc, argv);
     config.status.setStatusMsg("HELP: Ctrl-Q = quit");
 
+    // // Non blocking keystroke read
+    // int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+    // fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
+
     while (true)
     {
         // Read from sockfd
@@ -110,8 +114,11 @@ int main(int argc, char *argv[])
         // draw
         terminalGUI.draw();
 
-        // Process Input
+        // Process Input -> skip until actually read a key
         config.mod.c = InputReader::readKey();
+        if (config.mod.c < 0) {
+            continue;
+        } 
         config.mod.x = config.cursor.cx;
         config.mod.y = config.cursor.cy;
         config.mod.rx = config.cursor.rx;

@@ -3,6 +3,7 @@
 #include <array>
 #include <errmgr.hh>
 #include <config.hh>
+#include <fcntl.h>
 
 int InputReader::readKey()
 {
@@ -12,6 +13,9 @@ int InputReader::readKey()
     FD_ZERO(&readfds);
     FD_SET(STDIN_FILENO, &readfds);
 
+    int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+    fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK);
+
     while ((r = read(STDIN_FILENO, &c, sizeof(c))) != 1)
     {
         if (r < 0 && errno != EAGAIN)
@@ -19,6 +23,8 @@ int InputReader::readKey()
             ErrorMgr::err("read");
         }
     }
+
+    fcntl(STDIN_FILENO, F_SETFL, flags);
 
     struct timeval timeout;
     timeout.tv_sec = 0;
