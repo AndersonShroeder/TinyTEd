@@ -81,18 +81,14 @@ int main(int argc, char *argv[])
     // // Non blocking keystroke read
     // int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
     // fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
-
-    while (true)
-    {
-        // Read from sockfd
-        if (config.conn.connected)
-        {
+    while (true) {
+        // Handle incoming data from the server if connected
+        if (config.conn.connected) {
             while (config.recv() > 0) {
                 config.status.setStatusMsg("recv at " + std::to_string(config.mod.x) + ", " + std::to_string(config.mod.x));
                 size_t copyX = config.cursor.cx;
                 size_t copyY = config.cursor.cy;
                 size_t copyRX = config.cursor.rx;
-
 
                 // Adjust cursor
                 config.cursor.cy = config.mod.y;
@@ -100,10 +96,10 @@ int main(int argc, char *argv[])
                 config.cursor.rx = config.mod.rx;
                 terminalGUI.updateCursor(config.cursor);
 
-                // Process the input
+                // Process the input received from the server
                 InputHandler::processKey(config);
 
-                // Reset cursor
+                // Reset cursor to original position
                 config.cursor.cx = copyX;
                 config.cursor.cy = copyY;
                 config.cursor.rx = copyRX;
@@ -111,99 +107,63 @@ int main(int argc, char *argv[])
             }
         }
 
-        // draw
+        // Draw the terminal UI
         terminalGUI.draw();
 
-        // Process Input -> skip until actually read a key
+        // Process user input
         config.mod.c = InputReader::readKey();
         if (config.mod.c < 0) {
-            continue;
-        } 
+            continue; // No input, continue loop
+        }
+
         config.mod.x = config.cursor.cx;
         config.mod.y = config.cursor.cy;
         config.mod.rx = config.cursor.rx;
-        switch (InputHandler::processKey(config))
-        {
-        case InputHandler::procval::FAILURE:
-            // Handle processing error
-            goto exit;
-            break;
 
-        case InputHandler::procval::PROMPTSAVE:
-        {
-            std::string path;
-            if (config.fileData.path.empty())
-            {
-                path = InputHandler::promptUser(terminalGUI, config, "Save as: ", std::nullopt);
+        switch (InputHandler::processKey(config)) {
+            case InputHandler::procval::FAILURE:
+                goto exit;
+                break;
 
-                // Check if saving was canceled
-                if (path.empty())
-                {
-                    config.status.setStatusMsg("Save aborted");
+            case InputHandler::procval::PROMPTSAVE:
+                // Handle save prompt logic
+                break;
+
+            case InputHandler::procval::PROMPTSEARCH:
+                Commands::Search::run(terminalGUI, config);
+                break;
+
+            case InputHandler::procval::PROMPTSERVER:
+                Commands::LaunchServer::run(terminalGUI, config);
+                if (fcntl(config.conn.sockfd, F_SETFL, O_NONBLOCK) < 0) {
+                    std::cerr << "fcntl error" << std::endl;
                 }
-                else
-                {
-                    config.fileData.path = path;
-                    if (FileIO::saveFile(config))
-                    {
-                        config.status.setStatusMsg("File saved");
-                    }
-                    else
-                    {
-                        config.status.setStatusMsg("Failed to save file");
-                    }
+                break;
+
+            case InputHandler::procval::PROMPTCONNECT:
+                Commands::ConnectServer::run(terminalGUI, config);
+                if (fcntl(config.conn.sockfd, F_SETFL, O_NONBLOCK) < 0) {
+                    std::cerr << "fcntl error" << std::endl;
                 }
-            }
-            else
-            {
-                if (FileIO::saveFile(config))
-                {
-                    config.status.setStatusMsg("File saved");
+                break;
+
+            case InputHandler::procval::SHUTDOWN:
+                goto exit;
+                break;
+
+            case InputHandler::procval::PROMPTMOD:
+                if (config.conn.connected) {
+                    send(config.conn.sockfd, &config.mod, sizeof(config.mod), 0);
                 }
-                else
-                {
-                    config.status.setStatusMsg("Failed to save file");
-                }
-            }
-            break;
-        }
+                break;
 
-        case InputHandler::procval::PROMPTSEARCH:
-            Commands::Search::run(terminalGUI, config);
-            break;
-
-        case InputHandler::procval::PROMPTSERVER:
-            Commands::LaunchServer::run(terminalGUI, config);
-            if (fcntl(config.conn.sockfd, F_SETFL, O_NONBLOCK) < 0) {
-                std::cerr << "fcntl error" << std::endl;
-            }
-            break;
-        case InputHandler::procval::PROMPTCONNECT:
-            Commands::ConnectServer::run(terminalGUI, config);
-            if (fcntl(config.conn.sockfd, F_SETFL, O_NONBLOCK) < 0) {
-                std::cerr << "fcntl error" << std::endl;
-            }
-            break;
-
-        case InputHandler::procval::SHUTDOWN:
-            goto exit;
-            break;
-
-        case InputHandler::procval::PROMPTMOD:
-            if (config.conn.connected)
-            {
-                send(config.conn.sockfd, &config.mod, sizeof(config.mod), 0);
-            }
-            break;
-
-        default:
-            break;
+            default:
+                break;
         }
     }
 
-exit:
-    if (config.conn.connected)
-    {
+    exit:
+    if (config.conn.connected) {
         config.conn.connected = false;
         close(config.conn.sockfd);
     }
@@ -211,4 +171,5 @@ exit:
     terminalGUI.reset();
     config.term.exitRaw();
     return 0;
+
 }

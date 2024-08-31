@@ -64,6 +64,7 @@ std::string InputHandler::promptUser(TerminalGUI &gui, Config &cfg, const std::s
         gui.draw();
 
         int c = InputReader::readKey();
+        if (c < 0) return "";
         if (c == DEL || c == K_CTRL('h') || c == BACKSPACE)
         {
             if (!userInput.empty())
