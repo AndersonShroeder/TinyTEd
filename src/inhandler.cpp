@@ -105,7 +105,7 @@ int InputHandler::processKey(TTEdCursor &cursor, TTEdFileData &fData, TTEdTermDa
     {
     case '\r': // Newline
         fData.insertNewLine(cursor);
-        break;
+        return procval::PROMPTMOD;
     case K_CTRL('q'):
     {
         if (fData.modified && quitStroke > 0)
@@ -165,7 +165,7 @@ int InputHandler::processKey(TTEdCursor &cursor, TTEdFileData &fData, TTEdTermDa
         if (c == DEL)
             moveCursor(cursor, fData, ARROW_RIGHT); // Move cursor to the right for DEL
         fData.deleteChar(cursor);
-        break;
+        return procval::PROMPTMOD;
     case ARROW_UP:
     case ARROW_LEFT:
     case ARROW_DOWN:
@@ -182,7 +182,7 @@ int InputHandler::processKey(TTEdCursor &cursor, TTEdFileData &fData, TTEdTermDa
         {
             fData.insertChar(cursor, static_cast<char>(c));
         }
-        break;
+        return procval::PROMPTMOD;
     }
 
     return procval::SUCCESS;

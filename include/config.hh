@@ -301,7 +301,7 @@ struct TTEdConnection
     timeval timeout{0, 1000};
 
     int sockfd;
-    bool host;
+    bool host = false;
     bool connected;
 };
 
@@ -329,16 +329,17 @@ struct Config
     void scroll();
 
     // Receive data from the socket
-    std::string recv() {
+    std::string recv(size_t n) {
         if (!conn.connected) {
             status.setStatusMsg("No connection established.");
             return "";
         }
 
         char buffer[1024] = {0}; // Buffer for receiving data
-        ssize_t bytesRead = ::recv(conn.sockfd, buffer, sizeof(buffer) - 1, 0);
+        ssize_t bytesRead = ::recv(conn.sockfd, buffer, n, 0);
 
         if (bytesRead < 0) {
+            status.setStatusMsg("Recieve none");
             return "";
         } else if (bytesRead == 0) {
             status.setStatusMsg("Connection closed by peer.");

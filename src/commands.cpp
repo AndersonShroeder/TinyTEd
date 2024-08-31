@@ -100,7 +100,7 @@ void Commands::Search::run(TerminalGUI &gui, Config &cfg)
 
 void Commands::LaunchServer::run(TerminalGUI &gui, Config &cfg)
 {
-    int server_fd, new_socket;
+    int server_fd;
     struct sockaddr_in address;
     int addrlen = sizeof(address);
     
@@ -180,12 +180,11 @@ void Commands::LaunchServer::run(TerminalGUI &gui, Config &cfg)
 
 void Commands::ConnectServer::run(TerminalGUI &gui, Config &cfg)
 {
-    int sock = 0;
     struct sockaddr_in serv_addr;
     std::string message;
 
     // Create socket
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    if ((cfg.conn.sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         std::cerr << "Socket creation error" << std::endl;
     }
 
@@ -212,7 +211,7 @@ void Commands::ConnectServer::run(TerminalGUI &gui, Config &cfg)
     }
 
     // Connect to the server
-    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+    if (connect(cfg.conn.sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
         cfg.status.setStatusMsg("Connected Failed - No Server");
         return;
     }
@@ -220,13 +219,12 @@ void Commands::ConnectServer::run(TerminalGUI &gui, Config &cfg)
     // std::cout << "Connected to the server. Enter a message: ";
     cfg.status.setStatusMsg("Connected to TinyTed server");
 
-
     size_t length;
 
     // Recv file path for name/extension
-    recv(sock, &length, sizeof(length), 0);
+    recv(cfg.conn.sockfd, &length, sizeof(length), 0);
     std::vector<char> buffer(length);
-    recv(sock, buffer.data(), length, 0);
+    recv(cfg.conn.sockfd, buffer.data(), length, 0);
     cfg.fileData.path = std::string(buffer.begin(), buffer.end());
 
     parseFileExtension(cfg);
@@ -238,7 +236,7 @@ void Commands::ConnectServer::run(TerminalGUI &gui, Config &cfg)
 
         // Read size
         uint32_t size;
-        valread = read(sock, &size, sizeof(size));
+        valread = read(cfg.conn.sockfd, &size, sizeof(size));
 
         if (valread <= 0 || size == -1) {
             break;
@@ -247,7 +245,7 @@ void Commands::ConnectServer::run(TerminalGUI &gui, Config &cfg)
         char buf[size + 1];
         memset(buf, '\0', size + 1);
 
-        valread = read(sock, buf, size);
+        valread = read(cfg.conn.sockfd, buf, size);
 
         std::string line(buf);
 

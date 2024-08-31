@@ -20,6 +20,7 @@ namespace InputHandler
         PROMPTSEARCH,   ///< Indicates a prompt to start a search.
         PROMPTSERVER,
         PROMPTCONNECT,
+        PROMPTMOD,
         SHUTDOWN,       ///< Indicates a request to shut down the editor.
     };
 

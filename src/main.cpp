@@ -7,6 +7,7 @@
 #include <map>
 #include <signal.h>
 #include <commands.hh>
+#include <fcntl.h>
 
 const std::map<char, std::string> commands = {
     {'v', "Launches TinyTEd in verbose mode"},
@@ -75,17 +76,19 @@ int main(int argc, char *argv[])
     terminalGUI.reset();
     processInput(terminalGUI, config, argc, argv);
     config.status.setStatusMsg("HELP: Ctrl-Q = quit");
+    std::string modified = "modified";
 
     while (true)
     {
-        // draw
-        terminalGUI.draw();
-        
-        // Process Server Connections
+        // Read from sockfd
         if (config.conn.connected)
         {
-            std::string data = config.recv();
+            std::string data = config.recv(modified.size());
+            config.status.setStatusMsg(data);
         }
+
+        // draw
+        terminalGUI.draw();
 
         // Process Input
         switch (InputHandler::processKey(config.cursor, config.fileData, config.term, config.status))
@@ -141,13 +144,26 @@ int main(int argc, char *argv[])
 
         case InputHandler::procval::PROMPTSERVER:
             Commands::LaunchServer::run(terminalGUI, config);
+            if (fcntl(config.conn.sockfd, F_SETFL, O_NONBLOCK) < 0) {
+                std::cerr << "fcntl error" << std::endl;
+            }
             break;
         case InputHandler::procval::PROMPTCONNECT:
             Commands::ConnectServer::run(terminalGUI, config);
+            if (fcntl(config.conn.sockfd, F_SETFL, O_NONBLOCK) < 0) {
+                std::cerr << "fcntl error" << std::endl;
+            }
             break;
 
         case InputHandler::procval::SHUTDOWN:
             goto exit;
+            break;
+
+        case InputHandler::procval::PROMPTMOD:
+            if (config.conn.connected)
+            {
+                send(config.conn.sockfd, modified.c_str(), modified.size(), 0);
+            }
             break;
 
         default:
