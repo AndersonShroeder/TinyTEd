@@ -63,8 +63,8 @@ std::string InputHandler::promptUser(TerminalGUI &gui, Config &cfg, const std::s
         cfg.status.setStatusMsg(msg + userInput);
         gui.draw();
 
-        int c = InputReader::readKey();
-        if (c < 0) return "";
+        int c;
+        while ((c = InputReader::readKey()) < 0);
         if (c == DEL || c == K_CTRL('h') || c == BACKSPACE)
         {
             if (!userInput.empty())
