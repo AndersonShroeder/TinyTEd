@@ -53,5 +53,5 @@ namespace InputHandler
      * @param breakAny If true, will break out of the function immediately upon processing the key.
      * @return A value from the procval enum indicating the result of the key processing.
      */
-    int processKey(TTEdCursor &cursor, TTEdFileData &fData, TTEdTermData &term, TTEdStatus &stat, bool breakAny = false);
+    int processKey(Config &cfg, bool breakAny = false);
 };

@@ -1,0 +1,10 @@
+1. TTEdConn sendModification method
+2. TTEdConn recvModification
+3. TTEdModification struct in TTEdConfig (mod)
+ - ModType tag
+ - size_t len (length of data - at least sizeof(size_t) * 2)
+ - size_t x, y (cursor pos)
+ - std::string data (data if insertion)
+4. Decouple modifying buffer and creating modification
+5. When sending, send mod and then clear it
+6. recvModification reads into mod, processes mod, clears mod

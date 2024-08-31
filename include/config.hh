@@ -39,6 +39,12 @@ enum textState
     TS_SEARCH
 };
 
+enum modType
+{
+    MOD_DEL = 0,
+    MOD_INS,
+};
+
 struct SyntaxHL {
     int flags;
     std::string filetype;
@@ -293,6 +299,12 @@ struct TTEdFileData
     std::stringstream streamify();
 };
 
+struct TTEdMod
+{
+    size_t x, y, rx;
+    int c;
+};
+
 struct TTEdConnection 
 {
     struct sockaddr_in address;
@@ -321,6 +333,7 @@ struct Config
     TTEdFileData fileData;
     TTEdStatus status;
     TTEdConnection conn;
+    TTEdMod mod;
     static SyntaxHL *syntax;
 
     /**
@@ -329,26 +342,25 @@ struct Config
     void scroll();
 
     // Receive data from the socket
-    std::string recv(size_t n) {
+    int recv() {
         if (!conn.connected) {
             status.setStatusMsg("No connection established.");
-            return "";
+            return -1;
         }
 
-        char buffer[1024] = {0}; // Buffer for receiving data
-        ssize_t bytesRead = ::recv(conn.sockfd, buffer, n, 0);
+        ssize_t bytesRead = ::recv(conn.sockfd, &mod, sizeof(mod), 0);
 
         if (bytesRead < 0) {
-            status.setStatusMsg("Recieve none");
-            return "";
+            // status.setStatusMsg("Recieve none");
+            return -1;
         } else if (bytesRead == 0) {
             status.setStatusMsg("Connection closed by peer.");
             conn.connected = false;
-            return "";
+            return -1;
         }
 
         // Return the received data as a string
-        return std::string(buffer, bytesRead);
+        return 1;
     }
 
     // // Send data to the socket

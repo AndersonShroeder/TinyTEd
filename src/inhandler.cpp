@@ -93,24 +93,24 @@ std::string InputHandler::promptUser(TerminalGUI &gui, Config &cfg, const std::s
     }
 }
 
-int InputHandler::processKey(TTEdCursor &cursor, TTEdFileData &fData, TTEdTermData &term, TTEdStatus &stat, bool breakAny)
+int InputHandler::processKey(Config &cfg, bool breakAny)
 {
     static int quitStroke = 1;
-    int c = InputReader::readKey();
+    int c = cfg.mod.c;
 
     if (breakAny)
         return procval::SUCCESS;
 
-    switch (c)
+    switch (cfg.mod.c)
     {
     case '\r': // Newline
-        fData.insertNewLine(cursor);
+        cfg.fileData.insertNewLine(cfg.cursor);
         return procval::PROMPTMOD;
     case K_CTRL('q'):
     {
-        if (fData.modified && quitStroke > 0)
+        if (cfg.fileData.modified && quitStroke > 0)
         {
-            stat.setStatusMsg("UNSAVED CHANGES | Press quit again to discard changes");
+            cfg.status.setStatusMsg("UNSAVED CHANGES | Press quit again to discard changes");
             quitStroke--;
             break;
         }
@@ -132,45 +132,45 @@ int InputHandler::processKey(TTEdCursor &cursor, TTEdFileData &fData, TTEdTermDa
     {
         if (c == PAGE_UP)
         {
-            cursor.cy = cursor.rOffset;
+            cfg.cursor.cy = cfg.cursor.rOffset;
         }
         else if (c == PAGE_DOWN)
         {
-            cursor.cy = cursor.rOffset + term.sRow - 1;
-            if (cursor.cy > fData.size())
+            cfg.cursor.cy = cfg.cursor.rOffset + cfg.term.sRow - 1;
+            if (cfg.cursor.cy > cfg.fileData.size())
             {
-                cursor.cy = fData.size();
+                cfg.cursor.cy = cfg.fileData.size();
             }
         }
 
-        int times = term.sRow;
+        int times = cfg.term.sRow;
         while (times--)
         {
-            moveCursor(cursor, fData, c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
+            moveCursor(cfg.cursor, cfg.fileData, c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
         }
         break;
     }
     case HOME:
-        cursor.cx = 0;
+        cfg.cursor.cx = 0;
         break;
     case END:
-        if (cursor.cy < fData.size())
+        if (cfg.cursor.cy < cfg.fileData.size())
         {
-            cursor.cx = fData.at(cursor.cy)->sRaw.size();
+            cfg.cursor.cx = cfg.fileData.at(cfg.cursor.cy)->sRaw.size();
         }
         break;
     case BACKSPACE:
     case K_CTRL('h'):
     case DEL:
         if (c == DEL)
-            moveCursor(cursor, fData, ARROW_RIGHT); // Move cursor to the right for DEL
-        fData.deleteChar(cursor);
+            moveCursor(cfg.cursor, cfg.fileData, ARROW_RIGHT); // Move cursor to the right for DEL
+        cfg.fileData.deleteChar(cfg.cursor);
         return procval::PROMPTMOD;
     case ARROW_UP:
     case ARROW_LEFT:
     case ARROW_DOWN:
     case ARROW_RIGHT:
-        moveCursor(cursor, fData, c);
+        moveCursor(cfg.cursor, cfg.fileData, c);
         break;
     case K_CTRL('l'):
     case '\x1b':
@@ -180,7 +180,7 @@ int InputHandler::processKey(TTEdCursor &cursor, TTEdFileData &fData, TTEdTermDa
         // Handle other keys by inserting them
         if (c >= 0 && c < 128)
         {
-            fData.insertChar(cursor, static_cast<char>(c));
+            cfg.fileData.insertChar(cfg.cursor, static_cast<char>(c));
         }
         return procval::PROMPTMOD;
     }

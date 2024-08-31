@@ -166,7 +166,7 @@ void TerminalGUI::splashScreen()
 {
     genCoverPage(config, buf);
     flushBuf();
-    InputHandler::processKey(config.cursor, config.fileData, config.term, config.status, true);
+    InputHandler::processKey(config, true);
 }
 
 void TerminalGUI::reset()

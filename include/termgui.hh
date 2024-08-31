@@ -28,13 +28,6 @@ private:
     void flushBuf();
 
     /**
-     * @brief Updates the cursor position on the screen.
-     *
-     * @param cursor The cursor object containing the current cursor position.
-     */
-    void updateCursor(const TTEdCursor &cursor);
-
-    /**
      * @brief Draws the rows of text on the screen.
      *
      * @param cursor The cursor object containing the current cursor position.
@@ -94,6 +87,15 @@ public:
      * @param cfg The configuration object to initialize the terminal GUI.
      */
     TerminalGUI(Config &cfg);
+
+
+    /**
+     * @brief Updates the cursor position on the screen.
+     *
+     * @param cursor The cursor object containing the current cursor position.
+     */
+    void updateCursor(const TTEdCursor &cursor);
+
 
     /**
      * @brief Draws the entire terminal interface including text, status bar, and message bar.

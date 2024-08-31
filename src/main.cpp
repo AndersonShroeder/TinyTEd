@@ -8,6 +8,7 @@
 #include <signal.h>
 #include <commands.hh>
 #include <fcntl.h>
+#include <inreader.hh>
 
 const std::map<char, std::string> commands = {
     {'v', "Launches TinyTEd in verbose mode"},
@@ -76,28 +77,50 @@ int main(int argc, char *argv[])
     terminalGUI.reset();
     processInput(terminalGUI, config, argc, argv);
     config.status.setStatusMsg("HELP: Ctrl-Q = quit");
-    std::string modified = "modified";
 
     while (true)
     {
         // Read from sockfd
         if (config.conn.connected)
         {
-            std::string data = config.recv(modified.size());
-            config.status.setStatusMsg(data);
+            while (config.recv() > 0) {
+                config.status.setStatusMsg("recv at " + std::to_string(config.mod.x) + ", " + std::to_string(config.mod.x));
+                size_t copyX = config.cursor.cx;
+                size_t copyY = config.cursor.cy;
+                size_t copyRX = config.cursor.rx;
+
+
+                // Adjust cursor
+                config.cursor.cy = config.mod.y;
+                config.cursor.cx = config.mod.x;
+                config.cursor.rx = config.mod.rx;
+                terminalGUI.updateCursor(config.cursor);
+
+                // Process the input
+                InputHandler::processKey(config);
+
+                // Reset cursor
+                config.cursor.cx = copyX;
+                config.cursor.cy = copyY;
+                config.cursor.rx = copyRX;
+                terminalGUI.updateCursor(config.cursor);
+            }
         }
 
         // draw
         terminalGUI.draw();
 
         // Process Input
-        switch (InputHandler::processKey(config.cursor, config.fileData, config.term, config.status))
+        config.mod.c = InputReader::readKey();
+        config.mod.x = config.cursor.cx;
+        config.mod.y = config.cursor.cy;
+        config.mod.rx = config.cursor.rx;
+        switch (InputHandler::processKey(config))
         {
         case InputHandler::procval::FAILURE:
             // Handle processing error
-            terminalGUI.reset();
-            config.term.exitRaw();
-            return 1;
+            goto exit;
+            break;
 
         case InputHandler::procval::PROMPTSAVE:
         {
@@ -162,7 +185,7 @@ int main(int argc, char *argv[])
         case InputHandler::procval::PROMPTMOD:
             if (config.conn.connected)
             {
-                send(config.conn.sockfd, modified.c_str(), modified.size(), 0);
+                send(config.conn.sockfd, &config.mod, sizeof(config.mod), 0);
             }
             break;
 
